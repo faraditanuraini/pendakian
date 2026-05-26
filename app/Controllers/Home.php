@@ -9,50 +9,67 @@ class Home extends BaseController
 {
     public function index()
     {
-        // 1. Pastikan user sudah login
-        if (!session()->get('isLoggedIn')) {
-            return redirect()->to(base_url('login'));
-        }
-
-        // 2. Ambil ID_USER pembeli dari session aktif (fallback ke ID 1 jika testing tanpa login)
-        $idUserSkg = session()->get('id_user') ?? session()->get('ID_USER') ?? session()->get('id') ?? 1; 
-
-        // 3. Ambil SEMUA data transaksi (tanpa limit 1) untuk dipajang di komponen "Aktivitas Terakhir" Home
-        $db = \Config\Database::connect();
-        $builder = $db->table('transaksi');
-        $builder->select('transaksi.*, gunung.NAMA_GUNUNG as nama_gunung');
-        $builder->join('gunung', 'gunung.ID_GUNUNG = transaksi.ID_GUNUNG', 'left');
-        $builder->where('transaksi.ID_USER', $idUserSkg);
-        // Diurutkan berdasarkan ID_TRANSAKSI atau TGL_BOOKING paling baru
-        $builder->orderBy('transaksi.ID_TRANSAKSI', 'DESC'); 
-        
-        // . get()->getResultArray() digunakan untuk mengambil semua baris data berupa array multidimensi
-        $riwayatTransaksiRaw = $builder->get()->getResultArray();
-
-        // 4. Mapping data dari HURUF KAPITAL DB ke huruf kecil menggunakan foreach loop
         $riwayatTransaksi = [];
-        if (!empty($riwayatTransaksiRaw)) {
-            foreach ($riwayatTransaksiRaw as $row) {
-                $riwayatTransaksi[] = [
-                    'id_transaksi'    => $row['ID_TRANSAKSI'] ?? '',
-                    'nama_gunung'     => $row['nama_gunung'] ?? 'Gunung Tidak Diketahui',
-                    'tanggal_booking' => $row['TGL_BOOKING'] ?? '',
-                    'tanggal_mendaki' => $row['TGL_MENDAKI'] ?? '',
-                    'sesi'            => $row['SESI'] ?? '',
-                    'total_harga'     => $row['TOT_BAYAR'] ?? 0,
-                    'status_bayar'    => $row['STATUS_BAYAR'] ?? 'Belum Bayar'
-                ];
+        $riwayatPesanan = [];
+
+        // Ambil data transaksi hanya jika user sudah login
+        if (session()->get('isLoggedIn')) {
+            $idUserSkg = session()->get('id_user') ?? session()->get('ID_USER') ?? session()->get('id'); 
+
+            if ($idUserSkg) {
+                $db = \Config\Database::connect();
+                $builder = $db->table('transaksi');
+                $builder->select('transaksi.*, gunung.NAMA_GUNUNG as nama_gunung');
+                $builder->join('gunung', 'gunung.ID_GUNUNG = transaksi.ID_GUNUNG', 'left');
+                $builder->where('transaksi.ID_USER', $idUserSkg);
+                $builder->orderBy('transaksi.ID_TRANSAKSI', 'DESC'); 
+                $builder->limit(3); // Batasi query SQL langsung maksimal 3 data terbaru
+                
+                $riwayatTransaksiRaw = $builder->get()->getResultArray();
+
+                // Mapping data dari HURUF KAPITAL DB ke huruf kecil
+                if (!empty($riwayatTransaksiRaw)) {
+                    foreach ($riwayatTransaksiRaw as $row) {
+                        $riwayatTransaksi[] = [
+                            'id_transaksi'    => $row['ID_TRANSAKSI'] ?? '',
+                            'nama_gunung'     => $row['nama_gunung'] ?? 'Gunung Tidak Diketahui',
+                            'tanggal_booking' => $row['TGL_BOOKING'] ?? '',
+                            'tanggal_mendaki' => $row['TGL_MENDAKI'] ?? '',
+                            'sesi'            => $row['SESI'] ?? '',
+                            'total_harga'     => $row['TOT_BAYAR'] ?? 0,
+                            'status_bayar'    => $row['STATUS_BAYAR'] ?? 'Belum Bayar'
+                        ];
+                    }
+                }
+
+                $transaksiModel = new TransaksiModel();
+                $riwayatPesanan = $transaksiModel->getBookingByUser($idUserSkg);
             }
         }
 
-        // 5. Masukkan ke dalam array data kiriman view (Dipakai oleh foreach di view home)
+        // Menyiapkan data untuk dikirim ke view
         $data['riwayat_transaksi'] = $riwayatTransaksi;
+        $data['riwayat_pesanan'] = $riwayatPesanan;
 
-        // Jika kamu masih butuh data riwayat lama dari model, tetap kita sertakan di sini
-        $transaksiModel = new TransaksiModel();
-        $data['riwayat_pesanan'] = $transaksiModel->getBookingByUser($idUserSkg);
+        // Contoh Data Promo yang dilemparkan dari Controller ke View
+        $data['data_promo'] = [
+            [
+                'judul' => 'Diskon Alat Outdoor 20%',
+                'gambar' => 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800',
+                'tombol' => 'AMBIL',
+                'warna_button' => 'bg-orange-500 text-white',
+                'gradient' => 'from-black/90 via-black/20 to-transparent'
+            ],
+            [
+                'judul' => 'Open Trip Prau Merapi',
+                'gambar' => 'https://images.unsplash.com/photo-1501555088652-021faa106b9b?w=800',
+                'tombol' => 'CEK JADWAL',
+                'warna_button' => 'bg-white text-forest',
+                'gradient' => 'from-forest/90 via-forest/20 to-transparent'
+            ]
+        ];
 
-        // 6. Kirim data ke View halaman utama user (menunjuk ke view bernama 'home.php')
+        // Kirim data ke View halaman utama user (home.php)
         return view('home', $data); 
     }
 

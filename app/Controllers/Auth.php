@@ -16,6 +16,12 @@ class Auth extends BaseController
             return redirect()->to(base_url('/'));
         }
         
+        // Simpan parameter redirect dari URL ke session jika ada
+        $redirect = $this->request->getGet('redirect');
+        if ($redirect) {
+            session()->set('redirect_url', urldecode($redirect));
+        }
+
         // Menampilkan halaman login baru (app/Views/auth/login.php)
         return view('auth/login');
     }
@@ -43,6 +49,14 @@ class Auth extends BaseController
                 'role'       => 'pembeli',
                 'isLoggedIn' => true
             ]);
+            
+            // Cek apakah ada redirect URL tersimpan di session
+            $redirectUrl = $session->get('redirect_url');
+            if ($redirectUrl) {
+                $session->remove('redirect_url'); // Bersihkan session
+                return redirect()->to($redirectUrl);
+            }
+            
             return redirect()->to(base_url('/'));
         } else {
             return redirect()->back()->with('error', 'Username atau Password salah!');
