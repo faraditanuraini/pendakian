@@ -6,6 +6,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sewa Alat - Pendaki.id</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        forest: '#2d5a27',
+                    }
+                }
+            }
+        }
+    </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
@@ -54,13 +65,13 @@
                     <option value="" disabled selected>Pilih Gunung</option>
                     <?php if (!empty($gunungs)) : ?>
                         <?php foreach ($gunungs as $gunung) : ?>
-                            <option value="<?= esc($gunung['NAMA_GUNUNG']) ?>"><?= esc($gunung['NAMA_GUNUNG']) ?></option>
+                            <option value="<?= esc($gunung['ID_GUNUNG']) ?>"><?= esc($gunung['NAMA_GUNUNG']) ?></option>
                         <?php endforeach; ?>
                     <?php else : ?>
-                        <option value="rinjani">Gunung Rinjani</option>
-                        <option value="merapi">Gunung Merapi</option>
-                        <option value="semeru">Gunung Semeru</option>
-                        <option value="lincing">Bukit Lincing</option>
+                        <option value="1">Gunung Rinjani</option>
+                        <option value="2">Gunung Merapi</option>
+                        <option value="3">Gunung Semeru</option>
+                        <option value="4">Bukit Lincing</option>
                     <?php endif; ?>
                 </select>
             </div>
@@ -137,7 +148,17 @@
             <div class="rounded-3xl bg-slate-50 border border-slate-200 p-5 flex flex-col gap-3">
                 <div class="flex justify-between text-slate-500">Total Barang <span id="cart-count">0</span></div>
                 <div class="flex justify-between text-lg font-black text-slate-900">Total Harga <span id="cart-total">Rp 0</span></div>
-                <button id="pay-button" class="w-full rounded-3xl bg-forest text-white py-4 font-black shadow-xl hover:bg-[#22491d] transition duration-300">Bayar Sekarang</button>
+                
+                <form action="<?= base_url('transaksi/simpan') ?>" method="POST" id="form-checkout">
+                    <input type="hidden" name="id_gunung" id="input-id-gunung" value="">
+                    <input type="hidden" name="tgl_mendaki" id="input-tgl-mendaki" value="">
+                    <input type="hidden" name="tot_bayar" id="input-tot-bayar" value="">
+                    <input type="hidden" name="sesi" id="input-sesi" value="">
+
+                    <button type="submit" id="pay-button" class="w-full rounded-3xl bg-forest text-white py-4 font-black shadow-xl hover:bg-[#22491d] transition duration-300">
+                        Bayar Sekarang
+                    </button>
+                </form>
             </div>
         </section>
     </main>
@@ -170,7 +191,7 @@
             </div>
             <div class="space-y-2 mb-6">
                 <label class="text-sm font-bold text-slate-700">Catatan (Optional)</label>
-                <textarea id="modal-note" rows="3" placeholder="Ex : Nasinya yang banyaaaak" class="w-full rounded-3xl border border-slate-200 p-4 text-slate-700 outline-none focus:border-forest/70 focus:ring-2 focus:ring-forest/10"></textarea>
+                <textarea id="modal-note" rows="3" placeholder="Ex : Jangan ada karat ya kak" class="w-full rounded-3xl border border-slate-200 p-4 text-slate-700 outline-none focus:border-forest/70 focus:ring-2 focus:ring-forest/10"></textarea>
             </div>
             <button id="add-to-cart" class="w-full rounded-3xl bg-forest text-white py-4 font-black hover:bg-[#22491d] transition">Masukan Keranjang</button>
         </div>
@@ -190,62 +211,12 @@
         </div>
     </div>
 
-    <div id="payment-modal" class="fixed inset-0 hidden items-center justify-center modal-bg p-4 z-50">
-        <div class="w-full max-w-xl rounded-[2rem] bg-white p-6 shadow-2xl max-h-[calc(100vh-4rem)] overflow-y-auto">
-            <div class="flex items-center justify-between mb-5">
-                <div>
-                    <p class="text-sm text-slate-500 uppercase tracking-[0.3em]">Pembayaran</p>
-                    <h3 class="text-2xl font-black text-slate-900">Scan QRIS untuk bayar</h3>
-                </div>
-                <button id="close-payment" class="text-slate-500 hover:text-slate-900"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div class="rounded-[2rem] border border-slate-200 p-6 text-center mb-6">
-                <div class="mx-auto mb-5 h-52 w-52 rounded-3xl bg-slate-100 flex items-center justify-center text-slate-400">
-                    <i class="fa-solid fa-qrcode text-5xl"></i>
-                </div>
-                <p class="text-slate-500 mb-3">QRIS placeholder. Scan dengan aplikasimu untuk menyelesaikan pembayaran.</p>
-                <p class="text-slate-400 text-sm">Total <span class="font-black text-slate-900" id="payment-total">Rp 0</span></p>
-            </div>
-            <div class="space-y-4">
-                <div class="rounded-3xl bg-slate-50 border border-slate-200 p-4">
-                    <p class="text-sm font-semibold text-slate-600">Nama Pemesan</p>
-                    <p id="payment-name" class="text-lg font-black text-slate-900">Faradita</p>
-                </div>
-                <div class="rounded-3xl bg-slate-50 border border-slate-200 p-4">
-                    <p class="text-sm font-semibold text-slate-600">Detail Penyewaan</p>
-                    <div id="payment-details" class="text-sm text-slate-600"></div>
-                </div>
-                <div class="rounded-3xl bg-slate-50 border border-slate-200 p-4">
-                    <p class="text-sm font-semibold text-slate-600">Alat Disewa</p>
-                    <div id="payment-items" class="text-sm text-slate-600"></div>
-                </div>
-            </div>
-            <button id="confirm-close" class="mt-6 w-full rounded-3xl bg-forest text-white py-4 font-black hover:bg-[#22491d] transition">Tutup</button>
-        </div>
-    </div>
-
     <script>
         const mountains = {
-            'Gunung Rinjani': {
-                name: 'Gunung Rinjani',
-                posIn: ['Sembalun', 'Senaru', 'Aik Berik'],
-                posOut: ['Sembalun', 'Senaru']
-            },
-            'Gunung Merapi': {
-                name: 'Gunung Merapi',
-                posIn: ['Babadan', 'Selo', 'Kaliadem'],
-                posOut: ['Babadan', 'Kaliadem']
-            },
-            'Gunung Semeru': {
-                name: 'Gunung Semeru',
-                posIn: ['Ranu Pani', 'Arcopodo'],
-                posOut: ['Ranu Pani', 'Arcopodo']
-            },
-            'Bukit Lincing': {
-                name: 'Bukit Lincing',
-                posIn: ['Jalur Utama', 'Jalur Alternatif'],
-                posOut: ['Jalur Utama', 'Jalur Alternatif']
-            }
+            '1': { name: 'Gunung Rinjani', posIn: ['Sembalun', 'Senaru', 'Aik Berik'], posOut: ['Sembalun', 'Senaru'] },
+            '2': { name: 'Gunung Merapi', posIn: ['Babadan', 'Selo', 'Kaliadem'], posOut: ['Babadan', 'Kaliadem'] },
+            '3': { name: 'Gunung Semeru', posIn: ['Ranu Pani', 'Arcopodo'], posOut: ['Ranu Pani', 'Arcopodo'] },
+            '4': { name: 'Bukit Lincing', posIn: ['Jalur Utama', 'Jalur Alternatif'], posOut: ['Jalur Utama', 'Jalur Alternatif'] }
         };
 
         const equipment = [
@@ -274,13 +245,10 @@
         const cartItemsEl = document.getElementById('cart-items');
         const cartCountEl = document.getElementById('cart-count');
         const cartTotalEl = document.getElementById('cart-total');
-        const payButton = document.getElementById('pay-button');
         const itemModal = document.getElementById('item-modal');
         const addedOverlay = document.getElementById('added-overlay');
-        const paymentModal = document.getElementById('payment-modal');
 
         const categoryButtons = document.querySelectorAll('.category-btn');
-
         const modalName = document.getElementById('modal-item-name');
         const modalSubtitle = document.getElementById('modal-item-subtitle');
         const modalPrice = document.getElementById('modal-item-price');
@@ -370,7 +338,6 @@
         function closeAllModals() {
             itemModal.classList.add('hidden');
             addedOverlay.classList.add('hidden');
-            paymentModal.classList.add('hidden');
         }
 
         mountainEl.addEventListener('change', () => {
@@ -403,8 +370,7 @@
             resultsSection.classList.add('hidden');
             cartSection.classList.remove('hidden');
         });
-        document.getElementById('close-payment').addEventListener('click', closeAllModals);
-        document.getElementById('confirm-close').addEventListener('click', closeAllModals);
+
         document.getElementById('increase-qty').addEventListener('click', () => {
             currentQty++;
             modalQty.textContent = currentQty;
@@ -446,26 +412,27 @@
 
         document.getElementById('close-cart').addEventListener('click', () => {
             cartSection.classList.add('hidden');
-            if (!searchFormSection.classList.contains('hidden')) {
-                resultsSection.classList.remove('hidden');
-            } else {
-                resultsSection.classList.remove('hidden');
-            }
+            resultsSection.classList.remove('hidden');
         });
 
-        payButton.addEventListener('click', () => {
+        // LOGIKA PENYALINAN DATA INTERAKTIF SEBELUM DISUBMIT KE CONTROLLER
+        document.getElementById('form-checkout').addEventListener('submit', function(event) {
             if (!cart.length) {
+                event.preventDefault();
                 alert('Keranjang masih kosong. Tambahkan alat dulu.');
                 return;
             }
-            paymentModal.classList.remove('hidden');
-            document.getElementById('payment-total').textContent = cartTotalEl.textContent;
-            document.getElementById('payment-name').textContent = 'Faradita';
-            const selectedMountain = mountainEl.options[mountainEl.selectedIndex]?.text || mountainEl.value;
-            document.getElementById('payment-details').innerHTML = `Gunung: ${selectedMountain}<br>Tanggal: ${document.getElementById('rent-date').value}<br>Pos Masuk: ${posInEl.value}<br>Pos Keluar: ${posOutEl.value}`;
-            document.getElementById('payment-items').innerHTML = cart.length
-                ? cart.map(item => `<div class="mb-2"><strong>${item.title}</strong> x${item.qty} - ${formatCurrency(item.price * item.qty)}<br><span class="text-slate-500 text-sm">${item.note ? item.note : 'Tanpa catatan'}</span></div>`).join('')
-                : '<div class="text-slate-500">Belum ada alat yang dipilih.</div>';
+
+            const totalHarga = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+            const idGunungSelected = mountainEl.value;
+            const tanggalMendaki = document.getElementById('rent-date').value;
+            const gabunganSesiPos = "Masuk: " + posInEl.value + " - Keluar: " + posOutEl.value;
+
+            // Masukkan data riil ke input-input hidden pembungkus
+            document.getElementById('input-id-gunung').value = idGunungSelected;
+            document.getElementById('input-tgl-mendaki').value = tanggalMendaki;
+            document.getElementById('input-tot-bayar').value = totalHarga;
+            document.getElementById('input-sesi').value = gabunganSesiPos;
         });
 
         categoryButtons.forEach(button => {
