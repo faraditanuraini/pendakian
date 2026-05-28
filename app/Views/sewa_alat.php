@@ -34,7 +34,26 @@
                 <p class="text-sm text-slate-400">Sewa Alat</p>
                 <h1 class="text-xl font-black text-slate-900">Pilih perlengkapan untuk pendakian</h1>
             </div>
-            <div class="ml-auto text-slate-500 text-xs">Selasa, 26 Mei 2026 | 12.51</div>
+            <div class="ml-auto text-slate-500 text-xs">
+    <?php
+        // Mengatur zona waktu ke WIB
+        date_default_timezone_set('Asia/Jakarta');
+        
+        // Array untuk bahasa Indonesia
+        $hari = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+        $bulan = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+        
+        // Mengambil elemen waktu saat ini
+        $nama_hari = $hari[date('w')];
+        $tanggal = date('j');
+        $nama_bulan = $bulan[date('n')];
+        $tahun = date('Y');
+        $waktu = date('H.i');
+        
+        // Menampilkan hasilnya
+        echo "$nama_hari, $tanggal $nama_bulan $tahun | $waktu";
+    ?>
+</div>
         </div>
     </nav>
 
@@ -88,7 +107,7 @@
                 </div>
             </div>
 
-            <button id="search-button" class="w-full rounded-3xl bg-forest text-white py-4 text-sm font-black shadow-xl hover:bg-[#22491d] transition duration-300 focus:outline-none focus:ring-4 focus:ring-forest/20">Ayo Cari</button>
+            <button type="submit" class="w-full bg-[#2D5A27] text-white font-bold py-4 rounded-xl shadow-md hover:bg-[#1f3f1d] transition-all">Ayo Cari</button>
         </section>
 
         <section id="results-section" class="hidden space-y-8">
