@@ -56,33 +56,36 @@
         </div>
 
         <!-- Form Pemesanan -->
-        <form class="space-y-5 pt-4">
+        <form action="<?= base_url('tiket/proses_tahap1') ?>" method="POST" class="space-y-5 pt-4">
+            <?= csrf_field() ?>
+            <input type="hidden" name="id_gunung" value="<?= $gunung['ID_GUNUNG'] ?>">
+
             <div class="space-y-2">
                 <label class="text-sm font-black text-gray-700 uppercase">Pos Perizinan Masuk</label>
                 <div class="relative">
-                    <input type="text" placeholder="Cari Pos..." class="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl outline-none text-sm">
-                    <i class="fa-solid fa-magnifying-glass absolute right-4 top-4 text-gray-300"></i>
+                    <input type="text" name="pos_masuk" placeholder="Contoh: Sembalun, Ranu Pane, dll." required class="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl outline-none text-sm">
+                    <i class="fa-solid fa-map-pin absolute right-4 top-4 text-gray-300"></i>
                 </div>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
                 <div class="space-y-2">
                     <label class="text-sm font-black text-gray-700 uppercase">Tanggal Masuk</label>
-                    <input type="date" class="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm text-gray-400">
+                    <input type="date" name="tanggal_masuk" required class="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm text-gray-700">
                 </div>
                 <div class="space-y-2">
                     <label class="text-sm font-black text-gray-700 uppercase">Tanggal Keluar</label>
-                    <input type="date" class="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm text-gray-400">
+                    <input type="date" name="tanggal_keluar" required class="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm text-gray-700">
                 </div>
             </div>
 
             <div class="space-y-2 pb-10">
                 <label class="text-sm font-black text-gray-700 uppercase">Jumlah Pemesan</label>
-                <input type="number" min="1" max="8" placeholder="Minimal Pemesan 1" class="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm">
+                <input type="number" name="jumlah_pemesan" min="1" max="8" placeholder="Minimal Pemesan 1" required class="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm">
             </div>
 
             <!-- Button Selanjutnya -->
-            <button type="button" class="w-full bg-[#8CAF88] hover:bg-[#2D5A27] text-white font-black py-4 rounded-2xl transition-all shadow-lg shadow-gray-200">
+            <button type="submit" class="w-full bg-[#8CAF88] hover:bg-[#2D5A27] text-white font-black py-4 rounded-2xl transition-all shadow-lg shadow-gray-200">
                 Selanjutnya
             </button>
         </form>
