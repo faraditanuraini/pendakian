@@ -98,7 +98,7 @@
                             ['icon' => 'fa-mountain', 'label' => 'Tiket Masuk', 'url' => base_url('tiket'), 'color' => 'bg-emerald-100/50'],
                             ['icon' => 'fa-person-hiking', 'label' => 'Porter & Guide', 'url' => base_url('porter-guide'), 'color' => 'bg-sky-100/50'],
                             ['icon' => 'fa-tent', 'label' => 'Sewa Alat', 'url' => base_url('sewa-alat'), 'color' => 'bg-orange-100/50'],
-                            ['icon' => 'fa-motorcycle', 'label' => 'Ojek', 'url' => '#', 'color' => 'bg-amber-100/50'],
+                            ['icon' => 'fa-motorcycle', 'label' => 'Ojek', 'url' => base_url('ojek'), 'color' => 'bg-amber-100/50'],
                         ];
                         foreach ($items as $it) : ?>
                             <a href="<?= $it['url'] ?>" class="bg-white p-6 rounded-[2.5rem] shadow-sm border border-gray-100 flex flex-col items-center gap-4 hover:shadow-2xl hover:-translate-y-2 transition-all group">
