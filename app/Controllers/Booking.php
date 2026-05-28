@@ -8,8 +8,13 @@ class Booking extends BaseController
 {
     public function cek()
     {
-        // 1. Ambil ID_USER dari session login, jika tidak ada/kosong, paksa ke ID 1 untuk testing
-        $idUser = session()->get('id_user') ?? session()->get('ID_USER') ?? session()->get('id') ?? 1;
+        // Proteksi Halaman: Jika user BELUM login (session kosong), redirect paksa ke halaman login
+        if (!session()->get('isLoggedIn')) {
+            return redirect()->to(base_url('login'))->with('error', 'Silakan login terlebih dahulu untuk mengakses halaman Cek Booking.');
+        }
+
+        // 1. Ambil ID_USER dari session login yang sedang aktif secara aman (tanpa fallback default 1)
+        $idUser = session()->get('id_user') ?? session()->get('ID_USER') ?? session()->get('id');
 
         // 2. Ambil data dengan JOIN ke tabel gunung
         $db = \Config\Database::connect();
@@ -17,7 +22,7 @@ class Booking extends BaseController
         $builder->select('transaksi.*, gunung.NAMA_GUNUNG as nama_gunung'); 
         $builder->join('gunung', 'gunung.ID_GUNUNG = transaksi.ID_GUNUNG', 'left');
         
-        // Kita kunci berdasarkan ID_USER agar riwayatnya sesuai dengan user yang aktif
+        // Kita kunci berdasarkan ID_USER dari session agar riwayatnya sesuai dengan user yang aktif (Saringan Riwayat Pribadi)
         $builder->where('transaksi.ID_USER', $idUser);
         
         $builder->orderBy('transaksi.TGL_BOOKING', 'DESC');
@@ -64,20 +69,13 @@ class Booking extends BaseController
 
     public function simpan()
     {
+        // Proteksi Form: User harus login sebelum menyimpan pesanan baru
+        if (!session()->get('isLoggedIn')) {
+            return redirect()->to(base_url('login'))->with('error', 'Silakan login terlebih dahulu untuk melakukan transaksi booking.');
+        }
+
         // 1. Ambil ID_USER langsung dari session login
         $idUser = session()->get('id_user') ?? session()->get('ID_USER') ?? session()->get('id');
-
-        // Fallback jika belum login saat testing, pinjam user yang ada di database
-        if (!$idUser) {
-            $db = \Config\Database::connect();
-            $userSatu = $db->table('user')->get()->getRowArray();
-            
-            if ($userSatu) {
-                $idUser = $userSatu['ID_USER'];
-            } else {
-                return redirect()->to('login')->with('error', 'Silakan login terlebih dahulu.');
-            }
-        }
 
         // 2. Tangkap data dari form view sewa alat
         $idGunung   = $this->request->getPost('id_gunung');

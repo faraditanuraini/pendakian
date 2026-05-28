@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Masuk - Pendaki.id</title>
+    <title>Daftar - Pendaki.id</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -25,8 +25,8 @@
     <div class="w-full max-w-md bg-white p-8 rounded-[2.5rem] shadow-xl border border-gray-100 space-y-6">
         <div class="text-center space-y-2">
             <a href="<?= base_url('/') ?>" class="text-2xl font-black text-forest uppercase tracking-tighter">Pendaki.id</a>
-            <h2 class="text-xl font-extrabold text-gray-800">Selamat Datang Kembali!</h2>
-            <p class="text-sm text-gray-400">Silakan masuk dengan akun kamu</p>
+            <h2 class="text-xl font-extrabold text-gray-800">Buat Akun Baru</h2>
+            <p class="text-sm text-gray-400">Bergabunglah dan jelajahi keindahan alam Indonesia</p>
         </div>
 
         <?php if (session()->getFlashdata('error')) : ?>
@@ -43,14 +43,22 @@
             </div>
         <?php endif; ?>
 
-        <form action="<?= base_url('auth/proses') ?>" method="POST" class="space-y-4">
+        <form action="<?= base_url('auth/register') ?>" method="POST" class="space-y-4">
             <?= csrf_field() ?>
             
             <div class="space-y-2">
-                <label class="text-xs font-black text-gray-400 uppercase tracking-wider block pl-2">Username / Email</label>
+                <label class="text-xs font-black text-gray-400 uppercase tracking-wider block pl-2">Nama Lengkap</label>
                 <div class="flex items-center bg-gray-50 px-4 py-3.5 rounded-2xl gap-3 border border-transparent focus-within:border-forest/30 focus-within:bg-white transition-all">
-                    <i class="fa-solid fa-user text-gray-400"></i>
-                    <input type="text" name="username" value="<?= old('username') ?>" placeholder="Masukkan username atau email" required class="bg-transparent text-sm outline-none w-full text-gray-700">
+                    <i class="fa-solid fa-signature text-gray-400"></i>
+                    <input type="text" name="nama_lengkap" value="<?= old('nama_lengkap') ?>" placeholder="Masukkan nama lengkap Anda" required class="bg-transparent text-sm outline-none w-full text-gray-700">
+                </div>
+            </div>
+
+            <div class="space-y-2">
+                <label class="text-xs font-black text-gray-400 uppercase tracking-wider block pl-2">Email</label>
+                <div class="flex items-center bg-gray-50 px-4 py-3.5 rounded-2xl gap-3 border border-transparent focus-within:border-forest/30 focus-within:bg-white transition-all">
+                    <i class="fa-solid fa-envelope text-gray-400"></i>
+                    <input type="email" name="email" value="<?= old('email') ?>" placeholder="Masukkan alamat email Anda" required class="bg-transparent text-sm outline-none w-full text-gray-700">
                 </div>
             </div>
 
@@ -58,18 +66,18 @@
                 <label class="text-xs font-black text-gray-400 uppercase tracking-wider block pl-2">Password</label>
                 <div class="flex items-center bg-gray-50 px-4 py-3.5 rounded-2xl gap-3 border border-transparent focus-within:border-forest/30 focus-within:bg-white transition-all">
                     <i class="fa-solid fa-lock text-gray-400"></i>
-                    <input type="password" name="password" placeholder="Masukkan password" required class="bg-transparent text-sm outline-none w-full text-gray-700">
+                    <input type="password" name="password" placeholder="Masukkan password (minimal 6 karakter)" required class="bg-transparent text-sm outline-none w-full text-gray-700">
                 </div>
             </div>
 
             <button type="submit" class="w-full bg-forest text-white py-4 rounded-2xl text-sm font-bold shadow-md hover:bg-green-800 transition-all active:scale-[0.98] mt-2">
-                Masuk Sekarang
+                Daftar Sekarang
             </button>
         </form>
 
         <div class="text-center pt-2 space-y-4">
             <p class="text-sm text-gray-500">
-                Belum punya akun? <a href="<?= base_url('register') ?>" class="text-forest font-bold hover:underline">Daftar Sekarang</a>
+                Sudah memiliki akun? <a href="<?= base_url('login') ?>" class="text-forest font-bold hover:underline">Masuk Di Sini</a>
             </p>
             <div>
                 <a href="<?= base_url('/') ?>" class="text-xs font-bold text-gray-400 hover:text-forest transition-colors">
