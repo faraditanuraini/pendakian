@@ -42,4 +42,33 @@ abstract class BaseController extends Controller
         // Preload any models, libraries, etc, here.
         // $this->session = service('session');
     }
+
+    protected function susunTeksQRCode($trx)
+    {
+        return "KODE: " . $trx['barcode'] . "\n" .
+               "GUNUNG: " . $trx['nm_gunung'] . "\n" .
+               "PENDAKI UTAMA: " . $trx['nm_lengkap'] . "\n" .
+               "JALUR: " . $trx['sesi'] . "\n" .
+               "TANGGAL: " . date('d M Y', strtotime($trx['tgl_mendaki'])) . " s/d " . date('d M Y', strtotime($trx['tgl_turun'])) . "\n" .
+               "NO. TELEPON: " . $trx['no_wa'] . "\n" .
+               "STATUS: SUDAH BAYAR";
+    }
+
+    protected function susunTeksSewaQRCode($trx, $items)
+    {
+        $textBarang = "";
+        foreach ($items as $item) {
+            $itemName = $item['NAMA_ALAT'] ?? $item['NAMA_LAYANAN'] ?? $item['nm_layanan'] ?? 'Barang';
+            $itemQty = $item['JUMLAH_ITEM'] ?? $item['jumlah_detal'] ?? $item['qty'] ?? 1;
+            $textBarang .= "- " . $itemName . " (" . $itemQty . "x)\n";
+        }
+
+        return "KODE SEWA: " . $trx['barcode'] . "\n" .
+               "NAMA PENYEWA: " . $trx['nm_lengkap'] . "\n" .
+               "GUNUNG: " . $trx['nm_gunung'] . "\n" .
+               "TANGGAL SEWA: " . date('d M Y', strtotime($trx['tgl_mendaki'])) . "\n\n" .
+               "RINCIAN BARANG:\n" . $textBarang .
+               "TOTAL TAGIHAN: Rp " . number_format($trx['tot_bayar'], 0, ',', '.') . "\n" .
+               "STATUS: SUDAH BAYAR";
+    }
 }
