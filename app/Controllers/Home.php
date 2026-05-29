@@ -23,7 +23,7 @@ class Home extends BaseController
                 $builder->join('gunung', 'gunung.ID_GUNUNG = transaksi.ID_GUNUNG', 'left');
                 $builder->where('transaksi.ID_USER', $idUserSkg);
                 $builder->orderBy('transaksi.ID_TRANSAKSI', 'DESC'); 
-                $builder->limit(3); // Batasi query SQL langsung maksimal 3 data terbaru
+                $builder->limit(2); // Batasi query SQL langsung maksimal 2 data terbaru
                 
                 $riwayatTransaksiRaw = $builder->get()->getResultArray();
 

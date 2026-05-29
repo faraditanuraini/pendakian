@@ -34,6 +34,7 @@ $routes->post('tiket/proses_tahap1', 'Tiket::proses_tahap1');
 $routes->get('tiket/biodata', 'Tiket::biodata');
 $routes->post('tiket/proses_bayar', 'Tiket::proses_bayar');
 $routes->get('tiket/success/(:any)', 'Tiket::success/$1');
+$routes->get('tiket/getQRCodeRiwayat/(:any)', 'Tiket::getQRCodeRiwayat/$1');
 
 // Rute Alur Porter & Guide & Midtrans
 $routes->post('porter-guide/proses_bayar', 'PorterGuide::proses_bayar');

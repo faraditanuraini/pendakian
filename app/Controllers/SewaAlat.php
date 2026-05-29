@@ -280,21 +280,15 @@ class SewaAlat extends BaseController
 
         $namaPenyewa = session()->get('nama_penyewa_' . $idTransaksi) ?? session()->get('username') ?? 'Penyewa';
 
-        // 5. Gabungkan rincian sewa menjadi teks terformat untuk Barcode
-        $barcodeText = "=== BUKTI SEWA ALAT OUTDOOR ===\n"
-                     . "Kode Sewa   : " . $officialBarcode . "\n"
-                     . "Nama Penyewa: " . $namaPenyewa . "\n"
-                     . "Gunung      : " . ($gunung['NAMA_GUNUNG'] ?? 'Gunung') . "\n"
-                     . "Tanggal     : " . date('d M Y', strtotime($transaksi['TGL_MENDAKI'])) . "\n"
-                     . "Detail Barang:\n";
-        
-        foreach ($rentalItems as $item) {
-            $barcodeText .= "- " . $item['NAMA_ALAT'] . " (" . $item['JUMLAH_ITEM'] . " Pcs)\n";
-        }
-        
-        $barcodeText .= "Total Bayar : Rp " . number_format($transaksi['TOT_BAYAR'], 0, ',', '.') . "\n"
-                     . "Status      : LUNAS / SUDAH BAYAR\n"
-                     . "=================================";
+        // 5. Gabungkan rincian sewa menjadi teks terformat untuk Barcode menggunakan helper tersentralisasi
+        $trxData = [
+            'barcode'     => $officialBarcode,
+            'nm_lengkap'  => $namaPenyewa,
+            'nm_gunung'   => $gunung['NAMA_GUNUNG'] ?? 'Gunung',
+            'tgl_mendaki' => $transaksi['TGL_MENDAKI'],
+            'tot_bayar'   => $transaksi['TOT_BAYAR']
+        ];
+        $barcodeText = $this->susunTeksSewaQRCode($trxData, $rentalItems);
 
         $data = [
             'transaksi'    => $transaksi,

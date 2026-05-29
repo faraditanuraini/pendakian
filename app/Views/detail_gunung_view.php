@@ -71,11 +71,24 @@
             <div class="grid grid-cols-2 gap-4">
                 <div class="space-y-2">
                     <label class="text-sm font-black text-gray-700 uppercase">Tanggal Masuk</label>
-                    <input type="date" name="tanggal_masuk" required class="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm text-gray-700">
+                    <input type="date" name="tanggal_masuk" id="tgl_mendaki" required class="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm text-gray-700">
                 </div>
                 <div class="space-y-2">
                     <label class="text-sm font-black text-gray-700 uppercase">Tanggal Keluar</label>
-                    <input type="date" name="tanggal_keluar" required class="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm text-gray-700">
+                    <input type="date" name="tanggal_keluar" id="tgl_keluar" required class="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm text-gray-700">
+                </div>
+            </div>
+
+            <!-- Dynamic Live Quota Info Container -->
+            <div id="info-kuota-container" class="hidden p-4 rounded-2xl text-xs font-bold transition-all duration-300">
+                <div class="flex items-center gap-3">
+                    <div id="info-kuota-badge" class="w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-white bg-emerald-500">
+                        <i class="fa-solid fa-circle-info"></i>
+                    </div>
+                    <div class="leading-relaxed">
+                        <p class="font-extrabold uppercase tracking-wider text-[10px] text-gray-900">Informasi Kuota Real-time</p>
+                        <p id="info-kuota-text" class="mt-0.5 font-medium"></p>
+                    </div>
                 </div>
             </div>
 
@@ -90,6 +103,65 @@
             </button>
         </form>
     </div>
+
+    <!-- SCRIPT JAVASCRIPT PEMBATASAN KALENDER & CEK KUOTA AJAX -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            const minDate = `${yyyy}-${mm}-${dd}`;
+
+            const maxDateObj = new Date();
+            maxDateObj.setDate(today.getDate() + 30);
+            const max_yyyy = maxDateObj.getFullYear();
+            const max_mm = String(maxDateObj.getMonth() + 1).padStart(2, '0');
+            const max_dd = String(maxDateObj.getDate()).padStart(2, '0');
+            const maxDate = `${max_yyyy}-${max_mm}-${max_dd}`;
+
+            const dateInput = document.getElementById('tgl_mendaki');
+            const dateInputKeluar = document.getElementById('tgl_keluar');
+
+            if (dateInput) {
+                dateInput.min = minDate;
+                dateInput.max = maxDate;
+                
+                dateInput.addEventListener('change', function() {
+                    if (dateInputKeluar) {
+                        dateInputKeluar.min = this.value;
+                    }
+                    
+                    const idGunung = document.querySelector('input[name="id_gunung"]').value;
+                    const tglMendaki = this.value;
+                    
+                    if (idGunung && tglMendaki) {
+                        fetch(`<?= base_url('tiket/cek_kuota') ?>?id_gunung=${idGunung}&tgl_mendaki=${tglMendaki}`)
+                            .then(response => response.json())
+                            .then(data => {
+                                const container = document.getElementById('info-kuota-container');
+                                const badge = document.getElementById('info-kuota-badge');
+                                const textEl = document.getElementById('info-kuota-text');
+                                
+                                if (data.success) {
+                                    container.classList.remove('hidden');
+                                    if (data.sisa_kuota <= 0) {
+                                        container.className = 'bg-red-50 border border-red-200 p-4 rounded-2xl text-red-800 text-xs font-bold transition-all duration-300';
+                                        badge.className = 'w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-white bg-red-500';
+                                        textEl.innerHTML = `Maaf, kuota untuk tanggal terpilih sudah <span class="font-extrabold text-red-950">HABIS</span> (Tersisa 0 dari ${data.kapasitas_max} kuota). Silakan reschedule tanggal pendakian Anda!`;
+                                    } else {
+                                        container.className = 'bg-emerald-50 border border-emerald-200 p-4 rounded-2xl text-emerald-800 text-xs font-bold transition-all duration-300';
+                                        badge.className = 'w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-white bg-emerald-500';
+                                        textEl.innerHTML = `Kuota masih tersedia! Tersisa <span class="font-extrabold text-emerald-950">${data.sisa_kuota}</span> dari <span class="font-extrabold text-emerald-950">${data.kapasitas_max}</span> kuota total pada tanggal terpilih.`;
+                                    }
+                                }
+                            })
+                            .catch(err => console.error('Error fetching quota:', err));
+                    }
+                });
+            }
+        });
+    </script>
 
 </body>
 </html>

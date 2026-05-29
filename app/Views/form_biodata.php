@@ -148,6 +148,20 @@
                         <p class="text-gray-600 font-medium">Pembayaran akan menggunakan mode simulasi Sandbox. Anda dapat menggunakan detail VA / QRIS testing yang disediakan Midtrans tanpa uang asli.</p>
                     </div>
 
+                    <!-- Real-time Quota Note -->
+                    <div class="bg-emerald-50 border border-green-200 p-4 rounded-2xl flex items-start gap-3 text-emerald-800 text-xs">
+                        <svg class="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <div class="leading-relaxed font-semibold">
+                            <?php if ($total_pendaftar <= 0) : ?>
+                                <p>Catatan: Kapasitas tersedia di hari pilihan Anda <span class="text-emerald-950 font-bold">masih tersisa <?= esc($sisa_kuota) ?></span> dari <span class="text-emerald-950 font-bold"><?= esc($kapasitas_max) ?> kuota</span>.</p>
+                            <?php else : ?>
+                                <p>Catatan: Kapasitas tersedia di hari pilihan Anda <span class="text-emerald-950 font-bold">tersisa <?= esc($sisa_kuota) ?></span> dari <span class="text-emerald-950 font-bold"><?= esc($kapasitas_max) ?> kuota</span>.</p>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
                     <button type="submit" class="w-full bg-forest hover:bg-green-800 text-white py-4 rounded-2xl text-sm font-bold shadow-lg shadow-green-100 hover:shadow-green-200 transition-all active:scale-[0.98] mt-2 flex items-center justify-center gap-2">
                         <i class="fa-solid fa-wallet"></i> Bayar Sekarang
                     </button>
