@@ -6,6 +6,18 @@
     <?php $pageTitle = isset($gunung) ? 'Porter & Guide - ' . $gunung['NAMA_GUNUNG'] : 'Porter & Guide'; ?>
     <title><?= $pageTitle ?></title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+<script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                colors: {
+                    forest: '#2d5a27', // Ganti dengan kode warna hijau forest yang kamu inginkan
+                }
+            }
+        }
+    }
+</script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body class="bg-[#f7faf6] min-h-screen pb-10">
@@ -65,11 +77,11 @@
                     <p class="text-sm text-slate-600">Lokasi: <?= $gunung['LOKASI'] ?></p>
                 </div>
 
-                <form class="space-y-5 mt-6">
+                <form class="space-y-5 mt-6" onsubmit="return false;">
                     <div class="space-y-2">
                         <label class="text-sm font-bold text-slate-800 uppercase">Pos Perizinan Masuk</label>
                         <div class="relative">
-                            <input type="text" placeholder="Ex: Jalur Senaru" class="w-full rounded-3xl border border-gray-200 bg-slate-50 px-5 py-4 text-sm outline-none focus:border-forest focus:ring-2 focus:ring-forest/20">
+                            <input type="text" id="posEntry" placeholder="Ex: Jalur Senaru" class="w-full rounded-3xl border border-gray-200 bg-slate-50 px-5 py-4 text-sm outline-none focus:border-forest focus:ring-2 focus:ring-forest/20">
                             <i class="fa-solid fa-magnifying-glass absolute right-5 top-1/2 -translate-y-1/2 text-slate-400"></i>
                         </div>
                     </div>
@@ -77,7 +89,7 @@
                     <div class="space-y-2">
                         <label class="text-sm font-bold text-slate-800 uppercase">Pos Perizinan Keluar</label>
                         <div class="relative">
-                            <input type="text" placeholder="Ex: Jalur Sembalun" class="w-full rounded-3xl border border-gray-200 bg-slate-50 px-5 py-4 text-sm outline-none focus:border-forest focus:ring-2 focus:ring-forest/20">
+                            <input type="text" id="posExit" placeholder="Ex: Jalur Sembalun" class="w-full rounded-3xl border border-gray-200 bg-slate-50 px-5 py-4 text-sm outline-none focus:border-forest focus:ring-2 focus:ring-forest/20">
                             <i class="fa-solid fa-map-pin absolute right-5 top-1/2 -translate-y-1/2 text-slate-400"></i>
                         </div>
                     </div>
@@ -85,7 +97,7 @@
                     <div class="space-y-2">
                         <label class="text-sm font-bold text-slate-800 uppercase">Tipe Layanan</label>
                         <div class="relative">
-                            <input type="text" placeholder="Ex: Guide" class="w-full rounded-3xl border border-gray-200 bg-slate-50 px-5 py-4 text-sm outline-none focus:border-forest focus:ring-2 focus:ring-forest/20">
+                            <input type="text" id="serviceType" placeholder="Ex: Guide" class="w-full rounded-3xl border border-gray-200 bg-slate-50 px-5 py-4 text-sm outline-none focus:border-forest focus:ring-2 focus:ring-forest/20">
                             <i class="fa-solid fa-user-tie absolute right-5 top-1/2 -translate-y-1/2 text-slate-400"></i>
                         </div>
                     </div>
@@ -93,17 +105,17 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="space-y-2">
                             <label class="text-sm font-bold text-slate-800 uppercase">Tanggal Masuk</label>
-                            <input type="date" class="w-full rounded-3xl border border-gray-200 bg-slate-50 px-5 py-4 text-sm outline-none focus:border-forest focus:ring-2 focus:ring-forest/20">
+                            <input type="date" id="dateEntry" class="w-full rounded-3xl border border-gray-200 bg-slate-50 px-5 py-4 text-sm outline-none focus:border-forest focus:ring-2 focus:ring-forest/20">
                         </div>
                         <div class="space-y-2">
                             <label class="text-sm font-bold text-slate-800 uppercase">Tanggal Keluar</label>
-                            <input type="date" class="w-full rounded-3xl border border-gray-200 bg-slate-50 px-5 py-4 text-sm outline-none focus:border-forest focus:ring-2 focus:ring-forest/20">
+                            <input type="date" id="dateExit" class="w-full rounded-3xl border border-gray-200 bg-slate-50 px-5 py-4 text-sm outline-none focus:border-forest focus:ring-2 focus:ring-forest/20">
                         </div>
                     </div>
 
                     <div class="space-y-2">
                         <label class="text-sm font-bold text-slate-800 uppercase">Jumlah Pesanan</label>
-                        <input type="number" min="1" placeholder="Ex: 2 porter" class="w-full rounded-3xl border border-gray-200 bg-slate-50 px-5 py-4 text-sm outline-none focus:border-forest focus:ring-2 focus:ring-forest/20">
+                        <input type="number" id="quantity" min="1" placeholder="Ex: 2 porter" class="w-full rounded-3xl border border-gray-200 bg-slate-50 px-5 py-4 text-sm outline-none focus:border-forest focus:ring-2 focus:ring-forest/20">
                     </div>
                 </form>
             </section>
@@ -121,9 +133,164 @@
                 </div>
             </section>
 
-            <button class="w-full bg-forest text-white font-black py-4 rounded-3xl shadow-xl hover:bg-[#1f3f1d] transition-all">Pesan Sekarang</button>
+            <button type="button" class="w-full bg-forest text-white font-black py-4 rounded-3xl shadow-xl hover:bg-[#1f3f1d] active:shadow-lg transition-all cursor-pointer" onclick="openOrderModal()">Pesan Sekarang</button>
         <?php endif; ?>
     </main>
+
+    <!-- Modal Detail Pesanan -->
+    <div id="orderModal" class="hidden fixed inset-0 bg-black/50 z-50 overflow-y-auto">
+        <div class="min-h-screen flex items-center justify-center p-4">
+            <div class="bg-white rounded-[2rem] shadow-2xl max-w-md w-full overflow-hidden">
+                <!-- Header -->
+                <div class="bg-gradient-to-b from-slate-100 to-slate-50 p-6 border-b border-gray-200 flex items-center justify-between">
+                    <h2 class="text-lg font-black text-slate-900">PEMBAYARAN</h2>
+                    <button onclick="closeOrderModal()" class="text-slate-400 hover:text-slate-600">
+                        <i class="fa-solid fa-xmark text-xl"></i>
+                    </button>
+                </div>
+
+                <!-- Konten Modal -->
+                <div class="p-6 space-y-6 overflow-y-auto max-h-[calc(100vh-200px)]">
+                    <!-- QRIS Section -->
+                    <div class="bg-gradient-to-br from-slate-50 to-slate-100 rounded-3xl p-6 text-center border border-slate-200">
+                        <div class="inline-flex items-center justify-center w-48 h-48 bg-white rounded-2xl border-4 border-dashed border-slate-300 mb-4">
+                            <div class="text-center">
+                                <i class="fa-solid fa-qrcode text-5xl text-slate-300 block mb-2"></i>
+                                <p class="text-sm text-slate-400">QRIS Placeholder</p>
+                            </div>
+                        </div>
+                        <p class="text-sm text-slate-600 mt-4">QRIS placeholder. Scan dengan aplikasimu untuk menyelesaikan pembayaran.</p>
+                        <p class="text-xl font-black text-slate-900 mt-3">Total <span id="modalTotal" class="text-forest">Rp 0</span></p>
+                    </div>
+
+                    <!-- Nama Pemesan -->
+                    <div>
+                        <p class="text-sm font-bold text-slate-600 uppercase tracking-wide">Nama Pemesan</p>
+                        <div class="mt-2">
+                            <input type="text" id="customerName" placeholder="Nama Anda" class="w-full rounded-2xl border border-gray-200 bg-slate-50 px-4 py-3 text-lg font-black text-slate-900 outline-none focus:border-forest focus:ring-2 focus:ring-forest/20">
+                        </div>
+                    </div>
+
+                    <!-- Detail Pesanan -->
+                    <div class="space-y-3 bg-slate-50 rounded-2xl p-4 border border-slate-200">
+                        <p class="text-sm font-bold text-slate-600 uppercase tracking-wide">Detail Pesanan</p>
+                        
+                        <div class="space-y-2 text-sm">
+                            <div class="flex items-start gap-2">
+                                <span class="text-slate-500 font-semibold min-w-[120px]">Gunung:</span>
+                                <span class="text-slate-800 font-medium" id="modalMountain"><?= isset($gunung) ? $gunung['NAMA_GUNUNG'] : '-' ?></span>
+                            </div>
+                            
+                            <div class="flex items-start gap-2">
+                                <span class="text-slate-500 font-semibold min-w-[120px]">Tanggal:</span>
+                                <div class="text-slate-800 font-medium">
+                                    <p id="modalDateRange">-</p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-start gap-2">
+                                <span class="text-slate-500 font-semibold min-w-[120px]">Pos Masuk:</span>
+                                <span class="text-slate-800 font-medium" id="modalPosEntry">-</span>
+                            </div>
+                            
+                            <div class="flex items-start gap-2">
+                                <span class="text-slate-500 font-semibold min-w-[120px]">Pos Keluar:</span>
+                                <span class="text-slate-800 font-medium" id="modalPosExit">-</span>
+                            </div>
+                            
+                            <div class="flex items-start gap-2">
+                                <span class="text-slate-500 font-semibold min-w-[120px]">Tipe Layanan:</span>
+                                <span class="text-slate-800 font-medium" id="modalServiceType">-</span>
+                            </div>
+                            
+                            <div class="flex items-start gap-2">
+                                <span class="text-slate-500 font-semibold min-w-[120px]">Jumlah Pesanan:</span>
+                                <span class="text-slate-800 font-medium" id="modalQuantity">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer Button -->
+                <div class="bg-slate-50 border-t border-gray-200 p-6">
+                    <button onclick="processPayment()" class="w-full bg-forest text-white font-black py-3 rounded-2xl shadow-lg hover:bg-[#1f3f1d] transition-all">
+                        Lanjut Bayar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Fungsi untuk membuka modal
+        function openOrderModal() {
+            // Ambil data dari form menggunakan ID
+            const posEntry = document.getElementById('posEntry')?.value || '';
+            const posExit = document.getElementById('posExit')?.value || '';
+            const serviceType = document.getElementById('serviceType')?.value || '';
+            const dateEntry = document.getElementById('dateEntry')?.value || '';
+            const dateExit = document.getElementById('dateExit')?.value || '';
+            const quantity = document.getElementById('quantity')?.value || '';
+
+            // Validasi form
+            if (!posEntry || !posExit || !serviceType || !dateEntry || !dateExit || !quantity) {
+                alert('Mohon isi semua data terlebih dahulu');
+                return;
+            }
+
+            // Update data di modal
+            document.getElementById('modalPosEntry').textContent = posEntry;
+            document.getElementById('modalPosExit').textContent = posExit;
+            document.getElementById('modalServiceType').textContent = serviceType;
+            document.getElementById('modalQuantity').textContent = quantity + ' pesanan';
+            
+            // Format tanggal
+            const dateRangeText = dateEntry + ' sampai ' + dateExit;
+            document.getElementById('modalDateRange').textContent = dateRangeText;
+
+            // Hitung total (example: Rp 8.000 per pesanan per hari)
+            const date1 = new Date(dateEntry);
+            const date2 = new Date(dateExit);
+            const daysDiff = Math.ceil((date2 - date1) / (1000 * 60 * 60 * 24)) + 1;
+            const pricePerDay = 8000;
+            const total = quantity * daysDiff * pricePerDay;
+            
+            document.getElementById('modalTotal').textContent = 'Rp ' + total.toLocaleString('id-ID');
+
+            // Tampilkan modal
+            document.getElementById('orderModal').classList.remove('hidden');
+        }
+
+        // Fungsi untuk menutup modal
+        function closeOrderModal() {
+            document.getElementById('orderModal').classList.add('hidden');
+        }
+
+        // Fungsi untuk proses pembayaran
+        function processPayment() {
+            const customerName = document.getElementById('customerName').value;
+            
+            if (!customerName) {
+                alert('Mohon masukkan nama Anda terlebih dahulu');
+                return;
+            }
+
+            alert('Pembayaran untuk ' + customerName + ' sedang diproses...');
+            // Di sini bisa ditambahkan logika untuk mengirim data ke backend
+        }
+
+        // Tutup modal ketika klik di luar
+        document.addEventListener('DOMContentLoaded', function() {
+            const modal = document.getElementById('orderModal');
+            if (modal) {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === this) {
+                        closeOrderModal();
+                    }
+                });
+            }
+        });
+    </script>
 
 </body>
 </html>

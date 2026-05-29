@@ -16,6 +16,12 @@ class Gunung extends BaseController
 
     public function detail($id)
     {
+        // Trigger login jika pengguna belum masuk
+        if (!session()->get('isLoggedIn')) {
+            return redirect()->to(base_url('login?redirect=' . urlencode(current_url())))
+                             ->with('info', 'Silakan masuk / daftar untuk melanjutkan pemesanan tiket.');
+        }
+
         // Mengambil data gunung berdasarkan ID yang diklik
         $query = $this->db->table('gunung')->getWhere(['ID_GUNUNG' => $id]);
         $data['gunung'] = $query->getRowArray();
