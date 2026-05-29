@@ -1,4 +1,4 @@
-<?php $gunungs = $daftar_gunung ?? []; ?>
+<?php $daftar_gunung = $daftar_gunung ?? []; ?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -21,7 +21,6 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f7f6f1; }
-        .modal-bg { background: rgba(15, 23, 42, 0.65); }
     </style>
 </head>
 <body class="min-h-screen text-slate-800">
@@ -35,36 +34,43 @@
                 <h1 class="text-xl font-black text-slate-900">Pilih perlengkapan untuk pendakian</h1>
             </div>
             <div class="ml-auto text-slate-500 text-xs">
-    <?php
-        // Mengatur zona waktu ke WIB
-        date_default_timezone_set('Asia/Jakarta');
-        
-        // Array untuk bahasa Indonesia
-        $hari = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-        $bulan = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-        
-        // Mengambil elemen waktu saat ini
-        $nama_hari = $hari[date('w')];
-        $tanggal = date('j');
-        $nama_bulan = $bulan[date('n')];
-        $tahun = date('Y');
-        $waktu = date('H.i');
-        
-        // Menampilkan hasilnya
-        echo "$nama_hari, $tanggal $nama_bulan $tahun | $waktu";
-    ?>
-</div>
+                <?php
+                    date_default_timezone_set('Asia/Jakarta');
+                    $hari = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+                    $bulan = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                    $nama_hari = $hari[date('w')];
+                    $tanggal = date('j');
+                    $nama_bulan = $bulan[date('n')];
+                    $tahun = date('Y');
+                    $waktu = date('H.i');
+                    echo "$nama_hari, $tanggal $nama_bulan $tahun | $waktu";
+                ?>
+            </div>
         </div>
     </nav>
 
     <main class="max-w-screen-xl mx-auto px-5 py-6 space-y-8">
-        <section id="search-form-section" class="bg-white rounded-[2rem] shadow-sm border border-slate-200 p-6 space-y-6">
+        <!-- Tampilan Pesan Error (Flashdata) -->
+        <?php if (session()->getFlashdata('error')) : ?>
+            <div class="bg-rose-50 border border-rose-100 rounded-3xl p-5 text-rose-800 flex items-start gap-4 shadow-sm">
+                <i class="fa-solid fa-circle-exclamation text-xl mt-0.5 text-rose-500"></i>
+                <div>
+                    <h4 class="font-bold">Terjadi Kesalahan</h4>
+                    <p class="text-sm text-rose-600 mt-1"><?= session()->getFlashdata('error') ?></p>
+                </div>
+            </div>
+        <?php endif; ?>
+
+        <!-- Form Pencarian Alat -->
+        <form action="<?= base_url('sewa-alat/cari') ?>" method="POST" id="search-form" class="bg-white rounded-[2rem] shadow-sm border border-slate-200 p-6 space-y-6">
+            <?= csrf_field() ?>
+            
             <div class="space-y-2">
                 <p class="text-sm text-slate-500 uppercase tracking-[0.2em]">Lokasi Gunung</p>
-                <select id="mountain" class="w-full rounded-3xl border border-slate-200 px-4 py-4 text-slate-700 outline-none focus:border-forest/70 focus:ring-2 focus:ring-forest/10">
+                <select id="mountain" name="id_gunung" class="w-full rounded-3xl border border-slate-200 px-4 py-4 text-slate-700 outline-none focus:border-forest/70 focus:ring-2 focus:ring-forest/10" required>
                     <option value="" disabled selected>Pilih Gunung</option>
-                    <?php if (!empty($gunungs)) : ?>
-                        <?php foreach ($gunungs as $gunung) : ?>
+                    <?php if (!empty($daftar_gunung)) : ?>
+                        <?php foreach ($daftar_gunung as $gunung) : ?>
                             <option value="<?= esc($gunung['ID_GUNUNG']) ?>"><?= esc($gunung['NAMA_GUNUNG']) ?></option>
                         <?php endforeach; ?>
                     <?php else : ?>
@@ -79,11 +85,11 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="space-y-2">
                     <p class="text-sm text-slate-500 uppercase tracking-[0.2em]">Waktu Penyewaan</p>
-                    <input id="rent-date" type="date" class="w-full rounded-3xl border border-slate-200 px-4 py-4 text-slate-700 outline-none focus:border-forest/70 focus:ring-2 focus:ring-forest/10" />
+                    <input id="rent-date" name="tanggal_sewa" type="date" class="w-full rounded-3xl border border-slate-200 px-4 py-4 text-slate-700 outline-none focus:border-forest/70 focus:ring-2 focus:ring-forest/10" required />
                 </div>
                 <div class="space-y-2">
                     <p class="text-sm text-slate-500 uppercase tracking-[0.2em]">Pos Perizinan Masuk</p>
-                    <select id="pos-in" class="w-full rounded-3xl border border-slate-200 px-4 py-4 text-slate-700 outline-none focus:border-forest/70 focus:ring-2 focus:ring-forest/10" disabled>
+                    <select id="pos-in" name="pos_masuk" class="w-full rounded-3xl border border-slate-200 px-4 py-4 text-slate-700 outline-none focus:border-forest/70 focus:ring-2 focus:ring-forest/10" disabled required>
                         <option value="">Pilih gunung dulu</option>
                     </select>
                 </div>
@@ -91,7 +97,7 @@
 
             <div class="space-y-2">
                 <p class="text-sm text-slate-500 uppercase tracking-[0.2em]">Pos Perizinan Keluar</p>
-                <select id="pos-out" class="w-full rounded-3xl border border-slate-200 px-4 py-4 text-slate-700 outline-none focus:border-forest/70 focus:ring-2 focus:ring-forest/10" disabled>
+                <select id="pos-out" name="pos_keluar" class="w-full rounded-3xl border border-slate-200 px-4 py-4 text-slate-700 outline-none focus:border-forest/70 focus:ring-2 focus:ring-forest/10" disabled required>
                     <option value="">Pilih gunung dulu</option>
                 </select>
             </div>
@@ -108,7 +114,8 @@
             </div>
 
             <button type="submit" class="w-full bg-[#2D5A27] text-white font-bold py-4 rounded-xl shadow-md hover:bg-[#1f3f1d] transition-all">Ayo Cari</button>
-        </section>
+
+</section>
 
         <section id="results-section" class="hidden space-y-8">
             <div class="flex items-center justify-between gap-4">
@@ -163,55 +170,10 @@
                 </form>
             </div>
         </section>
+
+        </form>
+
     </main>
-
-    <div id="item-modal" class="fixed inset-0 hidden items-center justify-center modal-bg p-4 z-50">
-        <div class="w-full max-w-xl rounded-[2rem] bg-white p-6 shadow-2xl max-h-[calc(100vh-4rem)] overflow-y-auto">
-            <div class="flex items-center justify-between mb-5">
-                <div>
-                    <p class="text-sm text-slate-400">Masukan Keranjang</p>
-                    <h3 class="text-xl font-black text-slate-900" id="modal-item-name">Nama Item</h3>
-                </div>
-                <button id="close-modal" class="text-slate-500 hover:text-slate-900"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div class="flex items-center gap-4 mb-5">
-                <div class="w-24 h-24 rounded-3xl overflow-hidden bg-slate-100 flex items-center justify-center text-slate-300" id="modal-item-image">
-                    <i class="fa-solid fa-image text-2xl"></i>
-                </div>
-                <div>
-                    <p class="text-sm text-slate-500" id="modal-item-subtitle">Deskripsi singkat</p>
-                    <p class="text-2xl font-black text-slate-900" id="modal-item-price">Rp 0</p>
-                </div>
-            </div>
-            <div class="rounded-3xl border border-slate-200 p-4 mb-5">
-                <div class="flex items-center justify-between text-sm text-slate-500 mb-3">Jumlah Pesanan</div>
-                <div class="flex items-center justify-between gap-4">
-                    <button id="decrease-qty" class="w-12 h-12 rounded-3xl border border-slate-200 text-slate-700 text-xl">–</button>
-                    <span id="modal-qty" class="text-2xl font-black">1</span>
-                    <button id="increase-qty" class="w-12 h-12 rounded-3xl border border-slate-200 text-slate-700 text-xl">+</button>
-                </div>
-            </div>
-            <div class="space-y-2 mb-6">
-                <label class="text-sm font-bold text-slate-700">Catatan (Optional)</label>
-                <textarea id="modal-note" rows="3" placeholder="Ex : Jangan ada karat ya kak" class="w-full rounded-3xl border border-slate-200 p-4 text-slate-700 outline-none focus:border-forest/70 focus:ring-2 focus:ring-forest/10"></textarea>
-            </div>
-            <button id="add-to-cart" class="w-full rounded-3xl bg-forest text-white py-4 font-black hover:bg-[#22491d] transition">Masukan Keranjang</button>
-        </div>
-    </div>
-
-    <div id="added-overlay" class="fixed inset-0 hidden items-center justify-center modal-bg p-4 z-50">
-        <div class="w-full max-w-xl rounded-[2rem] bg-white p-6 shadow-2xl text-center max-h-[calc(100vh-4rem)] overflow-y-auto">
-            <div class="mb-6">
-                <div class="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100 text-3xl text-emerald-700"><i class="fa-solid fa-shopping-cart"></i></div>
-            </div>
-            <h3 class="text-2xl font-black text-slate-900 mb-2">Produk Telah Ditambahkan Ke Keranjang</h3>
-            <p class="text-sm text-slate-500 mb-6">Belanjaanmu telah disimpan di keranjang, buruan lakukan pemesanan biar pesananmu gak di ambil orang.</p>
-            <div class="grid grid-cols-2 gap-4">
-                <button id="back-to-shop" class="rounded-3xl border border-forest py-4 text-forest font-black hover:bg-forest/10 transition">Beli Lagi</button>
-                <button id="go-to-cart" class="rounded-3xl bg-forest text-white py-4 font-black hover:bg-[#22491d] transition">Lihat Keranjang</button>
-            </div>
-        </div>
-    </div>
 
     <script>
         const mountains = {
@@ -221,42 +183,10 @@
             '4': { name: 'Bukit Lincing', posIn: ['Jalur Utama', 'Jalur Alternatif'], posOut: ['Jalur Utama', 'Jalur Alternatif'] }
         };
 
-        const equipment = [
-            { id: 1, category: 'masak', title: 'Cooking Set', subtitle: 'Cooking Set', price: 8000, image: '🍳' },
-            { id: 2, category: 'masak', title: 'Kompor Kembang', subtitle: 'Kompor Bulat/Kembang', price: 7000, image: '🔥' },
-            { id: 3, category: 'lain', title: 'Tabung Gas Portable', subtitle: 'Tabung Gas Portable', price: 35000, image: '🛢️' },
-            { id: 4, category: 'lain', title: 'Trekking Pole', subtitle: 'Trekking Pole / Tongkat', price: 5000, image: '🥾' },
-            { id: 5, category: 'tidur', title: 'Matras Aluminium Alloy', subtitle: 'Matras Aluminium Alloy', price: 5000, image: '🛌' },
-            { id: 6, category: 'tidur', title: 'Matras Karet', subtitle: 'Matras Karet', price: 4000, image: '🛏️' },
-            { id: 7, category: 'lampu', title: 'Headlamp', subtitle: 'Headlamp praktis & ringan', price: 5000, image: '🔦' }
-        ];
-
-        const cart = [];
-        let currentItem = null;
-        let currentQty = 1;
-
         const mountainEl = document.getElementById('mountain');
         const posInEl = document.getElementById('pos-in');
         const posOutEl = document.getElementById('pos-out');
-        const searchButton = document.getElementById('search-button');
-        const searchFormSection = document.getElementById('search-form-section');
-        const resultsSection = document.getElementById('results-section');
-        const equipmentGrid = document.getElementById('equipment-grid');
-        const showCartButton = document.getElementById('show-cart-button');
-        const cartSection = document.getElementById('cart-section');
-        const cartItemsEl = document.getElementById('cart-items');
-        const cartCountEl = document.getElementById('cart-count');
-        const cartTotalEl = document.getElementById('cart-total');
-        const itemModal = document.getElementById('item-modal');
-        const addedOverlay = document.getElementById('added-overlay');
-
-        const categoryButtons = document.querySelectorAll('.category-btn');
-        const modalName = document.getElementById('modal-item-name');
-        const modalSubtitle = document.getElementById('modal-item-subtitle');
-        const modalPrice = document.getElementById('modal-item-price');
-        const modalQty = document.getElementById('modal-qty');
-        const modalNote = document.getElementById('modal-note');
-        const modalImage = document.getElementById('modal-item-image');
+        const searchForm = document.getElementById('search-form');
 
         function updatePosOptions(key) {
             const data = mountains[key] || {
@@ -276,182 +206,15 @@
             });
         }
 
-        function formatCurrency(value) {
-            return 'Rp ' + value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-        }
-
-        function renderEquipment(items) {
-            equipmentGrid.innerHTML = items.map(item => `
-                <button type="button" class="group block rounded-[2rem] border border-slate-200 bg-white p-5 text-left shadow-sm hover:shadow-xl transition" data-id="${item.id}">
-                    <div class="mb-5 flex h-52 items-center justify-center rounded-[2rem] bg-slate-100 text-5xl">${item.image}</div>
-                    <div class="space-y-2">
-                        <h3 class="text-lg font-black text-slate-900">${item.title}</h3>
-                        <p class="text-sm text-slate-500">${item.subtitle}</p>
-                    </div>
-                    <div class="mt-5 flex items-center justify-between">
-                        <span class="text-slate-900 font-black text-base">${formatCurrency(item.price)}/Pcs</span>
-                        <span class="text-green-700 font-bold tracking-[0.18em] uppercase text-xs">Tambah</span>
-                    </div>
-                </button>
-            `).join('');
-        }
-
-        function renderCart() {
-            if (!cart.length) {
-                cartItemsEl.innerHTML = `<div class="rounded-[2rem] border border-dashed border-slate-300 p-8 text-center text-slate-500">Belum ada barang di keranjang.</div>`;
-                cartCountEl.textContent = '0';
-                cartTotalEl.textContent = 'Rp 0';
-                return;
-            }
-            cartItemsEl.innerHTML = cart.map(item => `
-                <div class="rounded-[2rem] border border-slate-200 p-4 flex gap-4 items-center">
-                    <div class="w-20 h-20 rounded-3xl bg-slate-100 flex items-center justify-center text-3xl">${item.image}</div>
-                    <div class="flex-1">
-                        <div class="flex items-start justify-between gap-2">
-                            <div>
-                                <h4 class="font-black text-slate-900">${item.title}</h4>
-                                <p class="text-sm text-slate-500">${item.qty} Pcs · ${item.note || '-'} </p>
-                            </div>
-                            <button data-remove="${item.id}" class="text-slate-400 hover:text-red-600"><i class="fa-solid fa-trash"></i></button>
-                        </div>
-                        <div class="mt-3 flex items-center justify-between text-slate-900 font-black">
-                            <span>${formatCurrency(item.price * item.qty)}</span>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-            const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
-            cartCountEl.textContent = cart.length;
-            cartTotalEl.textContent = formatCurrency(total);
-        }
-
-        function openModal(itemId) {
-            currentItem = equipment.find(item => item.id === itemId);
-            currentQty = 1;
-            modalName.textContent = currentItem.title;
-            modalSubtitle.textContent = currentItem.subtitle;
-            modalPrice.textContent = formatCurrency(currentItem.price);
-            modalQty.textContent = currentQty;
-            modalNote.value = '';
-            modalImage.innerHTML = currentItem.image;
-            itemModal.classList.remove('hidden');
-        }
-
-        function closeAllModals() {
-            itemModal.classList.add('hidden');
-            addedOverlay.classList.add('hidden');
-        }
-
         mountainEl.addEventListener('change', () => {
             updatePosOptions(mountainEl.value);
         });
 
-        searchButton.addEventListener('click', () => {
-            if (!mountainEl.value || !document.getElementById('rent-date').value || !posInEl.value || !posOutEl.value) {
-                alert('Silakan pilih gunung, tanggal, dan pos perizinan terlebih dahulu.');
-                return;
-            }
-            searchFormSection.classList.add('hidden');
-            cartSection.classList.add('hidden');
-            resultsSection.classList.remove('hidden');
-            renderEquipment(equipment);
+        // Sebelum submit, aktifkan select agar datanya ikut terkirim ke server
+        searchForm.addEventListener('submit', () => {
+            posInEl.disabled = false;
+            posOutEl.disabled = false;
         });
-
-        equipmentGrid.addEventListener('click', event => {
-            const button = event.target.closest('[data-id]');
-            if (!button) return;
-            openModal(Number(button.dataset.id));
-        });
-
-        document.getElementById('close-modal').addEventListener('click', closeAllModals);
-        document.getElementById('back-to-shop').addEventListener('click', () => {
-            addedOverlay.classList.add('hidden');
-        });
-        document.getElementById('go-to-cart').addEventListener('click', () => {
-            addedOverlay.classList.add('hidden');
-            resultsSection.classList.add('hidden');
-            cartSection.classList.remove('hidden');
-        });
-
-        document.getElementById('increase-qty').addEventListener('click', () => {
-            currentQty++;
-            modalQty.textContent = currentQty;
-        });
-        document.getElementById('decrease-qty').addEventListener('click', () => {
-            if (currentQty > 1) currentQty--;
-            modalQty.textContent = currentQty;
-        });
-
-        document.getElementById('add-to-cart').addEventListener('click', () => {
-            const note = modalNote.value.trim();
-            const exist = cart.find(item => item.id === currentItem.id);
-            if (exist) {
-                exist.qty += currentQty;
-                exist.note = note || exist.note;
-            } else {
-                cart.push({ ...currentItem, qty: currentQty, note });
-            }
-            renderCart();
-            itemModal.classList.add('hidden');
-            addedOverlay.classList.remove('hidden');
-        });
-
-        showCartButton.addEventListener('click', () => {
-            resultsSection.classList.add('hidden');
-            cartSection.classList.remove('hidden');
-        });
-
-        cartItemsEl.addEventListener('click', event => {
-            const removeButton = event.target.closest('[data-remove]');
-            if (!removeButton) return;
-            const id = Number(removeButton.dataset.remove);
-            const index = cart.findIndex(item => item.id === id);
-            if (index !== -1) {
-                cart.splice(index, 1);
-                renderCart();
-            }
-        });
-
-        document.getElementById('close-cart').addEventListener('click', () => {
-            cartSection.classList.add('hidden');
-            resultsSection.classList.remove('hidden');
-        });
-
-        // LOGIKA PENYALINAN DATA INTERAKTIF SEBELUM DISUBMIT KE CONTROLLER
-        document.getElementById('form-checkout').addEventListener('submit', function(event) {
-            if (!cart.length) {
-                event.preventDefault();
-                alert('Keranjang masih kosong. Tambahkan alat dulu.');
-                return;
-            }
-
-            const totalHarga = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
-            const idGunungSelected = mountainEl.value;
-            const tanggalMendaki = document.getElementById('rent-date').value;
-            const gabunganSesiPos = "Masuk: " + posInEl.value + " - Keluar: " + posOutEl.value;
-
-            // Masukkan data riil ke input-input hidden pembungkus
-            document.getElementById('input-id-gunung').value = idGunungSelected;
-            document.getElementById('input-tgl-mendaki').value = tanggalMendaki;
-            document.getElementById('input-tot-bayar').value = totalHarga;
-            document.getElementById('input-sesi').value = gabunganSesiPos;
-        });
-
-        categoryButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                categoryButtons.forEach(btn => btn.classList.remove('bg-forest', 'text-white', 'border-forest'));
-                categoryButtons.forEach(btn => btn.classList.add('bg-white', 'text-slate-600', 'border-slate-200'));
-                button.classList.add('bg-forest', 'text-white', 'border-forest');
-                const category = button.dataset.category;
-                if (category === 'all') {
-                    renderEquipment(equipment);
-                } else {
-                    renderEquipment(equipment.filter(item => item.category === category));
-                }
-            });
-        });
-
-        renderCart();
     </script>
 </body>
 </html>

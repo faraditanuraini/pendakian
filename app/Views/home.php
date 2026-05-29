@@ -133,33 +133,6 @@
                     </div>
                 </section>
 
-                <section class="space-y-6">
-                    <div class="flex justify-between items-center px-4">
-                        <div class="flex items-center gap-3">
-                            <span class="w-8 h-1 bg-forest rounded-full"></span>
-                            <h3 class="text-forest font-black text-xl uppercase tracking-tighter">Promo Meriah</h3>
-                        </div>
-                        <a href="#" class="text-forest text-xs font-bold px-4 py-2 bg-white border rounded-full hover:bg-forest hover:text-white transition-all">Lihat Semua</a>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <?php if (!empty($data_promo)) : ?>
-                            <?php foreach ($data_promo as $promo) : ?>
-                                <div class="group relative rounded-[3rem] overflow-hidden aspect-[21/9] shadow-xl">
-                                    <img src="<?= esc($promo['gambar']) ?>" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000">
-                                    <div class="absolute inset-0 bg-gradient-to-r <?= esc($promo['gradient']) ?> p-10 flex flex-col justify-center">
-                                        <span class="text-white font-black text-3xl leading-tight max-w-[200px]"><?= esc($promo['judul']) ?></span>
-                                        <button class="mt-6 <?= esc($promo['warna_button']) ?> px-6 py-2 rounded-xl text-xs font-black self-start shadow-lg hover:scale-110 transition-transform"><?= esc($promo['tombol']) ?></button>
-                                    </div>
-                                </div>
-                            <?php endforeach; ?>
-                        <?php else : ?>
-                            <div class="col-span-2 border-2 border-dashed border-gray-200 p-8 rounded-3xl text-center bg-white">
-                                <p class="text-xs text-gray-400 font-bold italic">Belum ada promo tersedia.</p>
-                            </div>
-                        <?php endif; ?>
-                    </div>
-                </section>
-
                 <section class="grid grid-cols-1 md:grid-cols-3 gap-8 pt-12 border-t border-gray-200 items-stretch">
                     <!-- Kolom Riwayat Transaksi -->
                     <div class="md:col-span-2 bg-white p-8 rounded-[3rem] shadow-sm border border-gray-100 flex flex-col justify-between overflow-hidden">
@@ -235,9 +208,9 @@
                                 <p class="font-black text-2xl mb-2 leading-tight uppercase tracking-tight">BUTUH<br>BANTUAN?</p>
                                 <p class="text-xs opacity-75 mb-6 font-medium leading-relaxed"> CS kami siap melayani rencana muncakmu 24/7. </p>
                             </div>
-                            <button class="w-full bg-white text-forest py-3.5 rounded-2xl text-xs font-black hover:bg-yellow-400 hover:text-gray-900 transition-all shadow-lg active:scale-95">
+                            <a href="https://wa.me/6283119317920?text=Halo%20Admin%2C%20saya%20butuh%20bantuan%20terkait%20aplikasi%20pendakian." class="block w-full bg-white text-forest py-3.5 rounded-2xl text-xs font-black hover:bg-yellow-400 hover:text-gray-900 transition-all shadow-lg active:scale-95 text-center">
                                 HUBUNGI KAMI
-                            </button>
+                            </a>
                         </div>
                         <i class="fa-solid fa-headset text-8xl absolute -bottom-6 -right-6 opacity-10 group-hover:rotate-12 transition-transform"></i>
                     </div>
