@@ -16,11 +16,12 @@ class Booking extends BaseController
         // 1. Ambil ID_USER dari session login yang sedang aktif secara aman (tanpa fallback default 1)
         $idUser = session()->get('id_user') ?? session()->get('ID_USER') ?? session()->get('id');
 
-        // 2. Ambil data dengan JOIN ke tabel gunung
+        // 2. Ambil data dengan JOIN ke tabel gunung dan user
         $db = \Config\Database::connect();
         $builder = $db->table('transaksi');
-        $builder->select('transaksi.*, gunung.NAMA_GUNUNG as nama_gunung'); 
+        $builder->select('transaksi.*, gunung.NAMA_GUNUNG as nama_gunung, user.NAMA_LENGKAP as nama_lengkap, user.NO_WA as no_wa'); 
         $builder->join('gunung', 'gunung.ID_GUNUNG = transaksi.ID_GUNUNG', 'left');
+        $builder->join('user', 'user.ID_USER = transaksi.ID_USER', 'left');
         
         // Kita kunci berdasarkan ID_USER dari session agar riwayatnya sesuai dengan user yang aktif (Saringan Riwayat Pribadi)
         $builder->where('transaksi.ID_USER', $idUser);
@@ -31,15 +32,36 @@ class Booking extends BaseController
         // 3. Mapping data dari HURUF KAPITAL database ke huruf kecil untuk kebutuhan View
         $daftarBooking = [];
         foreach ($daftarBookingRaw as $b) {
+            $isPaid = in_array($b['STATUS_BAYAR'] ?? '', ['Sudah Bayar', 'Lunas']);
+            $barcodeManifest = '';
+            
+            if ($isPaid) {
+                $tglTurun = date('Y-m-d', strtotime(($b['TGL_MENDAKI'] ?? '') . ' + 2 days'));
+                $trxData = [
+                    'barcode'     => $b['BARCODE'] ?? '',
+                    'nm_gunung'   => $b['nama_gunung'] ?? 'Gunung',
+                    'nm_lengkap'  => $b['nama_lengkap'] ?? 'Pendaki',
+                    'sesi'        => $b['SESI'] ?? 'Pos Utama',
+                    'tgl_mendaki' => $b['TGL_MENDAKI'] ?? '',
+                    'tgl_turun'   => $tglTurun,
+                    'no_wa'       => $b['no_wa'] ?? 'Tidak Diketahui'
+                ];
+                $barcodeManifest = $this->susunTeksQRCode($trxData);
+            } else {
+                $barcodeManifest = $b['BARCODE'] ?? '';
+            }
+
             $daftarBooking[] = [
-                'id_transaksi'    => $b['ID_TRANSAKSI'] ?? '',
-                'nama_gunung'     => $b['nama_gunung'] ?? 'Gunung Tidak Diketahui',
-                'tanggal_booking' => $b['TGL_BOOKING'] ?? date('Y-m-d H:i:s'),
-                'tanggal_mendaki' => $b['TGL_MENDAKI'] ?? '',
-                'sesi'            => $b['SESI'] ?? '',
-                'total_harga'     => $b['TOT_BAYAR'] ?? 0,
-                'status_bayar'    => $b['STATUS_BAYAR'] ?? 'Belum Bayar',
-                'barcode'         => $b['BARCODE'] ?? ''
+                'id_transaksi'     => $b['ID_TRANSAKSI'] ?? '',
+                'nama_gunung'      => $b['nama_gunung'] ?? 'Gunung Tidak Diketahui',
+                'tanggal_booking'  => $b['TGL_BOOKING'] ?? date('Y-m-d H:i:s'),
+                'tanggal_mendaki'  => $b['TGL_MENDAKI'] ?? '',
+                'sesi'             => $b['SESI'] ?? '',
+                'total_harga'      => $b['TOT_BAYAR'] ?? 0,
+                'status_bayar'     => $b['STATUS_BAYAR'] ?? 'Belum Bayar',
+                'barcode'          => $barcodeManifest,
+                'barcode_official' => $b['BARCODE'] ?? '',
+                'nama_lengkap'     => $b['nama_lengkap'] ?? 'Pendaki'
             ];
         }
 

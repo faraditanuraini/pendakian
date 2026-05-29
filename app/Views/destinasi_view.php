@@ -41,129 +41,168 @@
 <body class="pb-20">
 
     <nav class="bg-white sticky top-0 z-[100] border-b shadow-sm">
-        <div class="max-w-screen-xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div class="max-w-screen-xl mx-auto px-6 py-4 flex items-center justify-between gap-4">
             <div class="flex items-center gap-4">
                 <a href="<?= base_url('/') ?>" class="text-gray-600 hover:text-forest transition-colors">
                     <i class="fa-solid fa-arrow-left text-xl"></i>
                 </a>
                 <h1 class="text-xl font-bold text-gray-800 tracking-tight">Destinasi Pendakian</h1>
             </div>
-            <i class="fa-solid fa-magnifying-glass text-gray-400 text-xl cursor-pointer"></i>
+            
+            <form action="<?= base_url('destinasi') ?>" method="get" class="flex items-center bg-gray-100 px-4 py-2 rounded-full gap-3 border border-transparent focus-within:border-forest/30 focus-within:bg-white transition-all w-48 sm:w-64">
+                <i class="fa-solid fa-magnifying-glass text-gray-400"></i>
+                <input type="text" name="search" value="<?= esc($search ?? '') ?>" placeholder="Cari gunung..." class="bg-transparent text-sm outline-none w-full">
+            </form>
         </div>
     </nav>
 
     <div class="max-w-screen-xl mx-auto px-6 mt-10 space-y-16">
         
-        <section>
-            <div class="flex items-center gap-3 mb-8">
-                <span class="w-1.5 h-8 bg-forest rounded-full"></span>
-                <h2 class="text-2xl font-black text-forest uppercase tracking-tighter">Kategori Gunung Utama</h2>
-            </div>
+        <?php 
+        $hasUtama = false;
+        $hasBukit = false;
+        if (!empty($daftar_gunung)) {
+            foreach ($daftar_gunung as $g) {
+                if (isset($g['KATEGORI'])) {
+                    if ($g['KATEGORI'] == 'Utama') $hasUtama = true;
+                    if ($g['KATEGORI'] == 'Bukit') $hasBukit = true;
+                }
+            }
+        }
+        ?>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                <?php foreach ($daftar_gunung as $g) : ?>
-                    <?php if (isset($g['KATEGORI']) && $g['KATEGORI'] == 'Utama') : ?>
-                        <div class="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-2xl transition-all duration-500 border border-gray-100">
-                            
-                            <div class="relative group aspect-[4/3] overflow-hidden">
-                                <div id="slider-<?= $g['ID_GUNUNG'] ?>" class="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide h-full w-full bg-gray-200 cursor-grab active:cursor-grabbing no-select">
-                                    
-                                    <div class="snap-center shrink-0 w-full h-full">
-                                        <img src="<?= base_url('uploads/' . $g['GAMBAR']) ?>" 
-                                             class="w-full h-full object-cover pointer-events-none"
-                                             onerror="this.src='<?= base_url('uploads/placeholder.jpg') ?>';">
+        <?php if (empty($daftar_gunung)) : ?>
+            <!-- Tampilan Pencarian Tidak Ditemukan -->
+            <div class="flex flex-col items-center justify-center py-20 text-center space-y-6">
+                <div class="w-24 h-24 bg-red-50 text-red-500 rounded-full flex items-center justify-center shadow-inner mb-4">
+                    <i class="fa-solid fa-mountain-slash text-4xl"></i>
+                </div>
+                <div class="space-y-2">
+                    <h3 class="text-2xl font-black text-gray-800 tracking-tight">Destinasi Tidak Ditemukan</h3>
+                    <p class="text-gray-400 text-sm max-w-md mx-auto">
+                        Maaf, destinasi gunung "<span class="font-bold text-forest"><?= esc($search) ?></span>" yang kamu cari tidak terdaftar di database kami. Coba cari dengan kata kunci lain.
+                    </p>
+                </div>
+                <a href="<?= base_url('destinasi') ?>" class="inline-block bg-forest text-white px-8 py-3 rounded-full text-xs font-bold shadow-md hover:bg-green-800 hover:-translate-y-0.5 transition-all active:scale-95">
+                    Lihat Semua Destinasi
+                </a>
+            </div>
+        <?php else : ?>
+            
+            <?php if ($hasUtama) : ?>
+            <section>
+                <div class="flex items-center gap-3 mb-8">
+                    <span class="w-1.5 h-8 bg-forest rounded-full"></span>
+                    <h2 class="text-2xl font-black text-forest uppercase tracking-tighter">Kategori Gunung Utama</h2>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                    <?php foreach ($daftar_gunung as $g) : ?>
+                        <?php if (isset($g['KATEGORI']) && $g['KATEGORI'] == 'Utama') : ?>
+                            <div class="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-2xl transition-all duration-500 border border-gray-100">
+                                
+                                <div class="relative group aspect-[4/3] overflow-hidden">
+                                    <div id="slider-<?= $g['ID_GUNUNG'] ?>" class="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide h-full w-full bg-gray-200 cursor-grab active:cursor-grabbing no-select">
+                                        
+                                        <div class="snap-center shrink-0 w-full h-full">
+                                            <img src="<?= base_url('uploads/' . $g['GAMBAR']) ?>" 
+                                                 class="w-full h-full object-cover pointer-events-none"
+                                                 onerror="this.src='<?= base_url('uploads/placeholder.jpg') ?>';">
+                                        </div>
+                                        
+                                        <?php if (!empty($g['GAMBAR_2'])) : ?>
+                                        <div class="snap-center shrink-0 w-full h-full">
+                                            <img src="<?= base_url('uploads/' . $g['GAMBAR_2']) ?>" 
+                                                 class="w-full h-full object-cover pointer-events-none"
+                                                 onerror="this.src='<?= base_url('uploads/placeholder.jpg') ?>';">
+                                        </div>
+                                        <?php endif; ?>
                                     </div>
-                                    
+
                                     <?php if (!empty($g['GAMBAR_2'])) : ?>
-                                    <div class="snap-center shrink-0 w-full h-full">
-                                        <img src="<?= base_url('uploads/' . $g['GAMBAR_2']) ?>" 
-                                             class="w-full h-full object-cover pointer-events-none"
-                                             onerror="this.src='<?= base_url('uploads/placeholder.jpg') ?>';">
+                                    <div class="absolute inset-y-0 flex items-center justify-between w-full px-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                        <i class="fa-solid fa-chevron-left text-white/70 text-[10px] bg-black/20 p-1.5 rounded-full shadow-sm"></i>
+                                        <i class="fa-solid fa-chevron-right text-white/70 text-[10px] bg-black/20 p-1.5 rounded-full shadow-sm"></i>
                                     </div>
                                     <?php endif; ?>
-                                </div>
 
-                                <?php if (!empty($g['GAMBAR_2'])) : ?>
-                                <div class="absolute inset-y-0 flex items-center justify-between w-full px-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                                    <i class="fa-solid fa-chevron-left text-white/70 text-[10px] bg-black/20 p-1.5 rounded-full shadow-sm"></i>
-                                    <i class="fa-solid fa-chevron-right text-white/70 text-[10px] bg-black/20 p-1.5 rounded-full shadow-sm"></i>
-                                </div>
-                                <?php endif; ?>
-
-                                <div class="absolute top-4 right-4 bg-black/50 backdrop-blur-md text-white text-[10px] font-bold px-3 py-1.5 rounded-full z-10">
-                                    Max: <?= $g['KAPASITAS_MAX'] ?> Org
-                                </div>
-                            </div>
-
-                            <a href="<?= base_url('gunung/detail/' . $g['ID_GUNUNG']) ?>" class="block p-6">
-                                <h3 class="font-black text-gray-800 text-lg leading-tight mb-1 hover:text-forest transition-colors uppercase">
-                                    <?= $g['NAMA_GUNUNG'] ?>
-                                </h3>
-                                <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">
-                                    <?= $g['LOKASI'] ?>
-                                </p>
-                                <div class="flex justify-end items-center pt-4 border-t border-gray-50">
-                                    <span class="text-[10px] font-bold text-blue-500 bg-blue-50 px-2 py-1 rounded-lg">
-                                        <i class="fa-solid fa-cloud mr-1"></i> <?= $g['CUACA'] ?>
-                                    </span>
-                                </div>
-                            </a>
-                        </div>
-                    <?php endif; ?>
-                <?php endforeach; ?>
-            </div>
-        </section>
-
-        <section>
-            <div class="flex items-center gap-3 mb-8">
-                <span class="w-1.5 h-8 bg-orange-500 rounded-full"></span>
-                <h2 class="text-2xl font-black text-orange-600 uppercase tracking-tighter">Kategori Bukit & Puthuk</h2>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                <?php foreach ($daftar_gunung as $g) : ?>
-                    <?php if (isset($g['KATEGORI']) && $g['KATEGORI'] == 'Bukit') : ?>
-                        <div class="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-2xl transition-all duration-500 border border-gray-100">
-                            
-                            <div class="relative group aspect-[4/3] overflow-hidden">
-                                <div id="slider-<?= $g['ID_GUNUNG'] ?>" class="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide h-full w-full bg-gray-200 cursor-grab active:cursor-grabbing no-select">
-                                    
-                                    <div class="snap-center shrink-0 w-full h-full">
-                                        <img src="<?= base_url('uploads/' . $g['GAMBAR']) ?>" class="w-full h-full object-cover pointer-events-none">
+                                    <div class="absolute top-4 right-4 bg-black/50 backdrop-blur-md text-white text-[10px] font-bold px-3 py-1.5 rounded-full z-10">
+                                        Max: <?= $g['KAPASITAS_MAX'] ?> Org
                                     </div>
-                                    
-                                    <?php if (!empty($g['GAMBAR_2'])) : ?>
-                                    <div class="snap-center shrink-0 w-full h-full">
-                                        <img src="<?= base_url('uploads/' . $g['GAMBAR_2']) ?>" class="w-full h-full object-cover pointer-events-none">
+                                </div>
+
+                                <a href="<?= base_url('gunung/detail/' . $g['ID_GUNUNG']) ?>" class="block p-6">
+                                    <h3 class="font-black text-gray-800 text-lg leading-tight mb-1 hover:text-forest transition-colors uppercase">
+                                        <?= $g['NAMA_GUNUNG'] ?>
+                                    </h3>
+                                    <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">
+                                        <?= $g['LOKASI'] ?>
+                                    </p>
+                                    <div class="flex justify-end items-center pt-4 border-t border-gray-50">
+                                        <span class="text-[10px] font-bold text-blue-500 bg-blue-50 px-2 py-1 rounded-lg">
+                                            <i class="fa-solid fa-cloud mr-1"></i> <?= $g['CUACA'] ?>
+                                        </span>
                                     </div>
-                                    <?php endif; ?>
-                                </div>
-
-                                <div class="absolute top-4 right-4 bg-black/50 backdrop-blur-md text-white text-[10px] font-bold px-3 py-1.5 rounded-full z-10">
-                                    Max: <?= $g['KAPASITAS_MAX'] ?> Org
-                                </div>
+                                </a>
                             </div>
+                        <?php endif; ?>
+                    <?php endforeach; ?>
+                </div>
+            </section>
+            <?php endif; ?>
 
-                            <a href="<?= base_url('gunung/detail/' . $g['ID_GUNUNG']) ?>" class="block p-6">
-                                <h3 class="font-black text-gray-800 text-lg leading-tight mb-1 hover:text-orange-600 transition-colors uppercase">
-                                    <?= $g['NAMA_GUNUNG'] ?>
-                                </h3>
-                                <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">
-                                    <?= $g['LOKASI'] ?>
-                                </p>
-                                <div class="flex justify-end items-center pt-4 border-t border-gray-50">
-                                    <span class="text-[10px] font-bold text-blue-500 bg-blue-50 px-2 py-1 rounded-lg">
-                                        <i class="fa-solid fa-cloud mr-1"></i> <?= $g['CUACA'] ?>
-                                    </span>
+            <?php if ($hasBukit) : ?>
+            <section>
+                <div class="flex items-center gap-3 mb-8">
+                    <span class="w-1.5 h-8 bg-orange-500 rounded-full"></span>
+                    <h2 class="text-2xl font-black text-orange-600 uppercase tracking-tighter">Kategori Bukit & Puthuk</h2>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                    <?php foreach ($daftar_gunung as $g) : ?>
+                        <?php if (isset($g['KATEGORI']) && $g['KATEGORI'] == 'Bukit') : ?>
+                            <div class="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-2xl transition-all duration-500 border border-gray-100">
+                                
+                                <div class="relative group aspect-[4/3] overflow-hidden">
+                                    <div id="slider-<?= $g['ID_GUNUNG'] ?>" class="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide h-full w-full bg-gray-200 cursor-grab active:cursor-grabbing no-select">
+                                        
+                                        <div class="snap-center shrink-0 w-full h-full">
+                                            <img src="<?= base_url('uploads/' . $g['GAMBAR']) ?>" class="w-full h-full object-cover pointer-events-none">
+                                        </div>
+                                        
+                                        <?php if (!empty($g['GAMBAR_2'])) : ?>
+                                        <div class="snap-center shrink-0 w-full h-full">
+                                            <img src="<?= base_url('uploads/' . $g['GAMBAR_2']) ?>" class="w-full h-full object-cover pointer-events-none">
+                                        </div>
+                                        <?php endif; ?>
+                                    </div>
+
+                                    <div class="absolute top-4 right-4 bg-black/50 backdrop-blur-md text-white text-[10px] font-bold px-3 py-1.5 rounded-full z-10">
+                                        Max: <?= $g['KAPASITAS_MAX'] ?> Org
+                                    </div>
                                 </div>
-                            </a>
-                        </div>
-                    <?php endif; ?>
-                <?php endforeach; ?>
-            </div>
-        </section>
 
-    </div>
+                                <a href="<?= base_url('gunung/detail/' . $g['ID_GUNUNG']) ?>" class="block p-6">
+                                    <h3 class="font-black text-gray-800 text-lg leading-tight mb-1 hover:text-orange-600 transition-colors uppercase">
+                                        <?= $g['NAMA_GUNUNG'] ?>
+                                    </h3>
+                                    <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">
+                                        <?= $g['LOKASI'] ?>
+                                    </p>
+                                    <div class="flex justify-end items-center pt-4 border-t border-gray-50">
+                                        <span class="text-[10px] font-bold text-blue-500 bg-blue-50 px-2 py-1 rounded-lg">
+                                            <i class="fa-solid fa-cloud mr-1"></i> <?= $g['CUACA'] ?>
+                                        </span>
+                                    </div>
+                                </a>
+                            </div>
+                        <?php endif; ?>
+                    <?php endforeach; ?>
+                </div>
+            </section>
+            <?php endif; ?>
+
+        <?php endif; ?>
 
     <script>
         const sliders = document.querySelectorAll('[id^="slider-"]');

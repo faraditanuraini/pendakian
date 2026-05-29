@@ -19,6 +19,50 @@ class Tiket extends BaseController
         return view('tiket', $data);
     }
 
+    public function cek_kuota()
+    {
+        $idGunung = $this->request->getGet('id_gunung');
+        $tglMendaki = $this->request->getGet('tgl_mendaki');
+
+        if (empty($idGunung) || empty($tglMendaki)) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'ID Gunung dan Tanggal Mendaki wajib disertakan.'
+            ]);
+        }
+
+        $gunung = $this->gunungModel->find($idGunung);
+        if (!$gunung) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Data gunung tidak ditemukan.'
+            ]);
+        }
+
+        $db = \Config\Database::connect();
+        $builder = $db->table('transaksi');
+        $builder->select('SUM(transaksi.TOT_BAYAR) as total_bayar');
+        $builder->where('transaksi.ID_GUNUNG', $idGunung);
+        $builder->where('transaksi.TGL_MENDAKI', $tglMendaki);
+        $builder->where('transaksi.STATUS_BAYAR', 'Sudah Bayar');
+        $query = $builder->get()->getRowArray();
+        $totalBayar = (int) ($query['total_bayar'] ?? 0);
+
+        $hargaTiket = (int) ($gunung['HARGA_TIKET'] ?? 1);
+        if ($hargaTiket <= 0) $hargaTiket = 1;
+
+        $totalPendaftar = (int) ($totalBayar / $hargaTiket);
+        $kapasitasMax = (int) ($gunung['KAPASITAS_MAX'] ?? 100);
+        $sisaKuota = max(0, $kapasitasMax - $totalPendaftar);
+
+        return $this->response->setJSON([
+            'success'         => true,
+            'total_pendaftar' => $totalPendaftar,
+            'kapasitas_max'  => $kapasitasMax,
+            'sisa_kuota'     => $sisaKuota
+        ]);
+    }
+
     public function proses_tahap1()
     {
         $idGunung = $this->request->getPost('id_gunung');
@@ -66,12 +110,32 @@ class Tiket extends BaseController
             return redirect()->to(base_url('tiket'))->with('error', 'Data gunung tidak ditemukan.');
         }
 
+        // Cek Kuota Real-time untuk dioper ke Tahap 2
+        $db = \Config\Database::connect();
+        $builder = $db->table('transaksi');
+        $builder->select('SUM(transaksi.TOT_BAYAR) as total_bayar');
+        $builder->where('transaksi.ID_GUNUNG', $tahap1['id_gunung']);
+        $builder->where('transaksi.TGL_MENDAKI', $tahap1['tanggal_masuk']);
+        $builder->where('transaksi.STATUS_BAYAR', 'Sudah Bayar');
+        $query = $builder->get()->getRowArray();
+        $totalBayar = (int) ($query['total_bayar'] ?? 0);
+
+        $hargaTiket = (int) ($gunung['HARGA_TIKET'] ?? 1);
+        if ($hargaTiket <= 0) $hargaTiket = 1;
+
+        $totalPendaftar = (int) ($totalBayar / $hargaTiket);
+        $kapasitasMax = (int) ($gunung['KAPASITAS_MAX'] ?? 100);
+        $sisaKuota = max(0, $kapasitasMax - $totalPendaftar);
+
         $data = [
-            'tahap1'      => $tahap1,
-            'gunung'      => $gunung,
-            'total_bayar' => $tahap1['jumlah_pemesan'] * $gunung['HARGA_TIKET'],
-            'snapToken'   => session()->getFlashdata('snapToken'),
-            'idTransaksi' => session()->getFlashdata('idTransaksi')
+            'tahap1'          => $tahap1,
+            'gunung'          => $gunung,
+            'total_bayar'     => $tahap1['jumlah_pemesan'] * $gunung['HARGA_TIKET'],
+            'total_pendaftar' => $totalPendaftar,
+            'sisa_kuota'      => $sisaKuota,
+            'kapasitas_max'   => $kapasitasMax,
+            'snapToken'       => session()->getFlashdata('snapToken'),
+            'idTransaksi'     => session()->getFlashdata('idTransaksi')
         ];
 
         return view('form_biodata', $data);
@@ -203,18 +267,18 @@ class Tiket extends BaseController
             'jumlah_pemesan'  => 1
         ];
 
-        // 3. Gabungkan detail biodata pendaki untuk di-encode ke QR Code/Barcode
-        $barcodeDataText = "=== TIKET PENDAKIAN RESMI ===\n"
-                         . "Kode Tiket : " . $officialTicketCode . "\n"
-                         . "Nama       : " . $biodata['nama_lengkap'] . "\n"
-                         . "Gunung     : " . ($gunung['NAMA_GUNUNG'] ?? 'Gunung') . "\n"
-                         . "Pos Masuk  : " . $tahap1['pos_masuk'] . "\n"
-                         . "Tanggal    : " . $tahap1['tanggal_masuk'] . " s/d " . $tahap1['tanggal_keluar'] . "\n"
-                         . "Jumlah     : " . $tahap1['jumlah_pemesan'] . " Orang\n"
-                         . "No. Telp   : " . $biodata['no_telp'] . "\n"
-                         . "Darurat    : " . $biodata['no_darurat'] . "\n"
-                         . "Alamat     : " . $biodata['alamat'] . "\n"
-                         . "=============================";
+        // 3. Gabungkan detail biodata pendaki untuk di-encode ke QR Code/Barcode menggunakan method tersentralisasi
+        $userObj = $db->table('user')->where('ID_USER', $transaksi['ID_USER'])->get()->getRowArray();
+        $trxData = [
+            'barcode'     => $officialTicketCode,
+            'nm_gunung'   => $gunung['NAMA_GUNUNG'] ?? 'Gunung',
+            'nm_lengkap'  => $biodata['nama_lengkap'] ?? $userObj['NAMA_LENGKAP'] ?? 'Pendaki',
+            'sesi'        => $tahap1['pos_masuk'] ?? $transaksi['SESI'],
+            'tgl_mendaki' => $transaksi['TGL_MENDAKI'],
+            'tgl_turun'   => $tahap1['tanggal_keluar'] ?? date('Y-m-d', strtotime($transaksi['TGL_MENDAKI'] . ' +2 days')),
+            'no_wa'       => $biodata['no_telp'] ?? $userObj['NO_WA'] ?? 'Tidak Diketahui'
+        ];
+        $barcodeDataText = $this->susunTeksQRCode($trxData);
 
         $data = [
             'transaksi'    => $transaksi,
@@ -288,5 +352,72 @@ class Tiket extends BaseController
                 'message' => 'Koneksi cURL Gagal: ' . $e->getMessage()
             ];
         }
+    }
+
+    public function getQRCodeRiwayat($id_transaksi)
+    {
+        // Proteksi API: pastikan user logged in
+        if (!session()->get('isLoggedIn')) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Silakan login terlebih dahulu.'
+            ])->setStatusCode(401);
+        }
+
+        $db = \Config\Database::connect();
+        $builder = $db->table('transaksi');
+        $builder->select('transaksi.*, gunung.NAMA_GUNUNG as nama_gunung, user.NAMA_LENGKAP as nama_lengkap, user.NO_WA as no_wa');
+        $builder->join('gunung', 'gunung.ID_GUNUNG = transaksi.ID_GUNUNG', 'left');
+        $builder->join('user', 'user.ID_USER = transaksi.ID_USER', 'left');
+        $builder->where('transaksi.ID_TRANSAKSI', $id_transaksi);
+        
+        $trx = $builder->get()->getRowArray();
+        if (!$trx) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Transaksi tidak ditemukan.'
+            ])->setStatusCode(404);
+        }
+
+        // Deteksi apakah transaksi adalah persewaan alat (SEWA-)
+        $isSewa = str_starts_with($trx['BARCODE'] ?? '', 'SEWA-');
+
+        if ($isSewa) {
+            // Ambil rincian detail barang sewa dari detail_layanan
+            $rentalItems = $db->table('detail_layanan')
+                              ->select('detail_layanan.*, peralatan.NAMA_ALAT')
+                              ->join('peralatan', 'peralatan.ID_PERALATAN = detail_layanan.ID_LAYANAN_', 'left')
+                              ->where('ID_TRANSAKSI', $id_transaksi)
+                              ->get()
+                              ->getResultArray();
+
+            $trxData = [
+                'barcode'     => $trx['BARCODE'] ?? '',
+                'nm_lengkap'  => $trx['nama_lengkap'] ?? 'Penyewa',
+                'nm_gunung'   => $trx['nama_gunung'] ?? 'Gunung',
+                'tgl_mendaki' => $trx['TGL_MENDAKI'],
+                'tot_bayar'   => $trx['TOT_BAYAR']
+            ];
+            $barcodeDataText = $this->susunTeksSewaQRCode($trxData, $rentalItems);
+        } else {
+            // Susun teks manifest dengan format tersentralisasi (untuk tiket gunung standar)
+            $tglTurun = date('Y-m-d', strtotime(($trx['TGL_MENDAKI'] ?? '') . ' + 2 days'));
+            $trxData = [
+                'barcode'     => $trx['BARCODE'] ?? '',
+                'nm_gunung'   => $trx['nama_gunung'] ?? 'Gunung',
+                'nm_lengkap'  => $trx['nama_lengkap'] ?? 'Pendaki',
+                'sesi'        => $trx['SESI'] ?? 'Pos Utama',
+                'tgl_mendaki' => $trx['TGL_MENDAKI'] ?? '',
+                'tgl_turun'   => $tglTurun,
+                'no_wa'       => $trx['no_wa'] ?? 'Tidak Diketahui'
+            ];
+            $barcodeDataText = $this->susunTeksQRCode($trxData);
+        }
+
+        return $this->response->setJSON([
+            'success'      => true,
+            'barcode_data' => $barcodeDataText,
+            'qr_url'       => 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=' . urlencode($barcodeDataText)
+        ]);
     }
 }
