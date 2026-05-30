@@ -163,18 +163,20 @@ function getAlatGradient($id) {
                     <?php if (!empty($daftar_alat)) : ?>
                         <?php foreach ($daftar_alat as $alat) : ?>
                             <?php 
-                            $isOutOfStock = $alat['STOK'] <= 0;
-                            $emoji = getAlatEmoji($alat['ID_PERALATAN']);
-                            $gradient = getAlatGradient($alat['ID_PERALATAN']);
+                            $isOutOfStock = $alat['stok_tersedia'] <= 0;
+                            // Alat hanya tersedia jika kondisi 'Baik' dan stok > 0
+                            $isAvailable = (!$isOutOfStock) && (isset($alat['kondisi']) && $alat['kondisi'] === 'Baik');
+                            $emoji = getAlatEmoji($alat['id']);
+$gradient = getAlatGradient($alat['id']);
                             ?>
                             <div class="bg-white rounded-[2rem] border border-slate-200 p-5 flex flex-col shadow-sm hover:shadow-xl hover:-translate-y-1 transition duration-300 <?= $isOutOfStock ? 'opacity-65' : '' ?>">
                                 
                                 <!-- Visual Image / Thumbnail -->
                                 <div class="mb-5 h-48 w-full rounded-[1.5rem] relative shadow-inner overflow-hidden select-none bg-slate-100 flex items-center justify-center">
-                                    <?php if (!empty($alat['GAMBAR'])) : ?>
-                                        <!-- Menampilkan Gambar Lokal dengan Auto-Fallback jika file tidak ditemukan -->
-                                        <img src="<?= base_url('assets/img/peralatan/' . $alat['GAMBAR']) ?>" alt="<?= esc($alat['NAMA_ALAT']) ?>" class="w-full h-full object-cover transform hover:scale-105 transition duration-500" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                                        <div class="absolute inset-0 bg-gradient-to-br <?= $gradient ?> flex items-center justify-center text-white text-6xl hidden">
+                                    <?php if (!empty($alat['gambar'])) : ?> <img src="<?= base_url('uploads/equipments/' . $alat['gambar']) ?>" 
+         alt="<?= esc($alat['nama_alat']) ?>"
+     class="w-full h-full object-cover transform hover:scale-105 transition duration-500" 
+     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">                                        <div class="absolute inset-0 bg-gradient-to-br <?= $gradient ?> flex items-center justify-center text-white text-6xl hidden">
                                             <div class="absolute inset-0 bg-black/10 opacity-30"></div>
                                             <span class="relative z-10 filter drop-shadow-md transform hover:scale-110 transition duration-300"><?= $emoji ?></span>
                                         </div>
@@ -186,9 +188,9 @@ function getAlatGradient($id) {
                                     <?php endif; ?>
                                     
                                     <!-- Status Stok Tipis -->
-                                    <?php if ($alat['STOK'] > 0 && $alat['STOK'] <= 5) : ?>
+                                    <?php if ($alat['stok_tersedia'] > 0 && $alat['stok_tersedia'] <= 5) : ?>
                                         <span class="absolute top-3 left-3 bg-amber-500 text-white text-[10px] uppercase font-black tracking-widest px-2.5 py-1 rounded-full shadow-md z-10">
-                                            Sisa <?= $alat['STOK'] ?>
+                                            Sisa <?= $alat['stok_tersedia'] ?>
                                         </span>
                                     <?php endif; ?>
                                 </div>
@@ -196,15 +198,15 @@ function getAlatGradient($id) {
                                 <!-- Nama & Deskripsi Alat -->
                                 <div class="flex-grow space-y-1.5">
                                     <h4 class="text-base font-black text-slate-900 leading-tight">
-                                        <?= esc($alat['NAMA_ALAT']) ?>
+                                        <?= esc($alat['nama_alat']) ?>
                                     </h4>
                                     <div class="flex items-center gap-2">
                                         <span class="text-slate-400 text-xs flex items-center gap-1">
-                                            <i class="fa-solid fa-warehouse"></i> Stok: <?= $alat['STOK'] ?> Pcs
+                                            <i class="fa-solid fa-warehouse"></i> Stok: <?= $alat['stok_tersedia'] ?> Pcs
                                         </span>
                                         <span class="text-slate-300 text-[10px]">•</span>
-                                        <span class="text-xs font-semibold <?= $isOutOfStock ? 'text-rose-500' : 'text-emerald-600' ?>">
-                                            <?= $isOutOfStock ? 'Habis Disewa' : 'Ready' ?>
+                                        <span class="text-xs font-semibold <?= !$isAvailable ? 'text-rose-500' : 'text-emerald-600' ?>">
+                                            <?= !$isAvailable ? 'Not Available' : 'Ready' ?>
                                         </span>
                                     </div>
                                 </div>
@@ -217,21 +219,21 @@ function getAlatGradient($id) {
                                     <div>
                                         <p class="text-[10px] text-slate-400 uppercase tracking-widest">Biaya / Hari</p>
                                         <p class="text-base font-black text-slate-900">
-                                            Rp <?= number_format($alat['HARGA_SEWA'], 0, ',', '.') ?>
+                                            Rp <?= number_format($alat['harga_sewa'], 0, ',', '.') ?>
                                         </p>
                                     </div>
 
-                                    <?php if ($isOutOfStock) : ?>
+                                    <?php if (!$isAvailable) : ?>
                                         <button disabled class="bg-slate-100 text-slate-400 text-xs font-bold px-4 py-3 rounded-2xl cursor-not-allowed">
-                                            Stok Habis
+                                            Tidak Tersedia
                                         </button>
                                     <?php else : ?>
                                         <!-- Container Kontrol Kuantitas Interaktif -->
-                                        <div id="control-<?= esc($alat['ID_PERALATAN']) ?>">
+                                        <div id="control-<?= esc($alat['id']) ?>">
                                             <!-- Tombol Tambah Pertama Kali -->
                                             <button 
                                                 type="button" 
-                                                onclick="addToCart('<?= esc($alat['ID_PERALATAN']) ?>', '<?= esc($alat['NAMA_ALAT']) ?>', <?= $alat['HARGA_SEWA'] ?>, <?= $alat['STOK'] ?>, '<?= $emoji ?>')"
+                                                onclick="addToCart('<?= esc($alat['id']) ?>', '<?= esc($alat['nama_alat']) ?>', <?= $alat['harga_sewa'] ?>, <?= $alat['stok_tersedia'] ?>, '<?= $emoji ?>')"
                                                 class="bg-forest hover:bg-emerald-800 text-white text-xs font-black tracking-wider px-5 py-3 rounded-2xl shadow-md hover:shadow-lg transition duration-200">
                                                 <i class="fa-solid fa-plus mr-1"></i> TAMBAH
                                             </button>

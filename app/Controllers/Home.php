@@ -82,7 +82,8 @@ class Home extends BaseController
     public function sewaAlat(): string
     {
         $gunungModel = new GunungModel();
-        $data['daftar_gunung'] = $gunungModel->findAll();
+        // Hanya ambil gunung dengan STATUS_JALUR 'Buka'
+$data['daftar_gunung'] = $gunungModel->where('STATUS_JALUR', 'Buka')->findAll();
         return view('sewa_alat', $data);
     }
 }

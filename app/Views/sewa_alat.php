@@ -33,24 +33,10 @@
                 <p class="text-sm text-slate-400">Sewa Alat</p>
                 <h1 class="text-xl font-black text-slate-900">Pilih perlengkapan untuk pendakian</h1>
             </div>
-            <div class="ml-auto text-slate-500 text-xs">
-                <?php
-                    date_default_timezone_set('Asia/Jakarta');
-                    $hari = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-                    $bulan = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-                    $nama_hari = $hari[date('w')];
-                    $tanggal = date('j');
-                    $nama_bulan = $bulan[date('n')];
-                    $tahun = date('Y');
-                    $waktu = date('H.i');
-                    echo "$nama_hari, $tanggal $nama_bulan $tahun | $waktu";
-                ?>
-            </div>
         </div>
     </nav>
 
     <main class="max-w-screen-xl mx-auto px-5 py-6 space-y-8">
-        <!-- Tampilan Pesan Error (Flashdata) -->
         <?php if (session()->getFlashdata('error')) : ?>
             <div class="bg-rose-50 border border-rose-100 rounded-3xl p-5 text-rose-800 flex items-start gap-4 shadow-sm">
                 <i class="fa-solid fa-circle-exclamation text-xl mt-0.5 text-rose-500"></i>
@@ -61,7 +47,6 @@
             </div>
         <?php endif; ?>
 
-        <!-- Form Pencarian Alat -->
         <form action="<?= base_url('sewa-alat/cari') ?>" method="POST" id="search-form" class="bg-white rounded-[2rem] shadow-sm border border-slate-200 p-6 space-y-6">
             <?= csrf_field() ?>
             
@@ -103,18 +88,66 @@
             </div>
 
             <div class="grid gap-3">
+
                 <div class="rounded-3xl bg-blue-50 border border-blue-100 p-4 text-sm text-slate-700">
+
                     <div class="font-semibold mb-1">Jika kamu memilih Pos Perizinan keluar berbeda maka akan di kenakan <span class="text-blue-700">Biaya Tambahan Pengambilan Barang</span></div>
+
                     <div class="text-slate-500 text-sm">Pilih pos masuk dan keluar dengan benar supaya biaya akomodasi lebih terencana.</div>
+
                 </div>
+
                 <div class="rounded-3xl bg-yellow-50 border border-yellow-100 p-4 text-sm text-slate-700">
+
                     <div class="font-semibold mb-1">Barang yang disewa oleh pendaki diwajibkan dijaga dengan baik.</div>
+
                     <div class="text-slate-500 text-sm">Kerusakan menjadi tanggung jawab pendaki selama masa pinjam.</div>
+
                 </div>
+
             </div>
 
             <button type="submit" class="w-full bg-[#2D5A27] text-white font-bold py-4 rounded-xl shadow-md hover:bg-[#1f3f1d] transition-all">Ayo Cari</button>
-        </form>
+        </form> 
+        <section id="results-section" class="hidden space-y-8">
+            <div class="flex items-center justify-between gap-4">
+                <div>
+                    <p class="text-xs uppercase tracking-[0.25em] text-slate-400">Ditemukan berdasarkan pilihanmu</p>
+                    <h2 class="text-2xl font-black text-slate-900">Perlengkapan Tersedia</h2>
+                </div>
+                <button id="show-cart-button" class="rounded-3xl bg-forest text-white px-5 py-3 text-sm font-bold shadow-xl hover:bg-[#22491d] transition duration-300">Lihat Keranjang</button>
+            </div>
+            <div id="equipment-grid" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6"></div>
+        </section>
+
+        <section id="cart-section" class="hidden bg-white rounded-[2rem] shadow-sm border border-slate-200 p-6 space-y-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-slate-400 uppercase tracking-[0.25em]">Keranjang</p>
+                    <h2 class="text-2xl font-black text-slate-900">Alat yang dipilih</h2>
+                </div>
+                <button id="close-cart" class="text-sm text-forest font-bold hover:text-emerald-900">Tutup</button>
+            </div>
+
+            <div id="cart-items" class="space-y-4"></div>
+
+            <div class="rounded-3xl bg-slate-50 border border-slate-200 p-5 flex flex-col gap-3">
+                <div class="flex justify-between text-slate-500">Total Barang <span id="cart-count">0</span></div>
+                <div class="flex justify-between text-lg font-black text-slate-900">Total Harga <span id="cart-total">Rp 0</span></div>
+                
+                <form action="<?= base_url('booking/simpan') ?>" method="POST" id="form-checkout">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="id_gunung" id="input-id-gunung" value="">
+                    <input type="hidden" name="tgl_mendaki" id="input-tgl-mendaki" value="">
+                    <input type="hidden" name="tot_bayar" id="input-tot-bayar" value="">
+                    <input type="hidden" name="sesi" id="input-sesi" value="">
+                    
+                    <button type="submit" id="pay-button" class="w-full rounded-3xl bg-forest text-white py-4 font-black shadow-xl hover:bg-[#22491d] transition duration-300">
+                        Bayar Sekarang
+                    </button>
+                </form>
+            </div>
+        </section>
     </main>
 
     <script>
@@ -152,7 +185,6 @@
             updatePosOptions(mountainEl.value);
         });
 
-        // Sebelum submit, aktifkan select agar datanya ikut terkirim ke server
         searchForm.addEventListener('submit', () => {
             posInEl.disabled = false;
             posOutEl.disabled = false;

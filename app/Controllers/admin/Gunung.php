@@ -118,4 +118,24 @@ class Gunung extends BaseController
 
         return redirect()->to(base_url('admin/gunung'))->with('error', 'Gagal menghapus, data tidak ditemukan.');
     }
+
+    public function updateStatus()
+    {
+        // Pastikan request datang dari AJAX
+        if ($this->request->isAJAX()) {
+            $json = $this->request->getJSON();
+            $id = $json->id;
+            $status = $json->status;
+
+            $model = new GunungModel();
+            
+            // Lakukan update kolom STATUS_JALUR berdasarkan ID_GUNUNG
+            $update = $model->update($id, ['STATUS_JALUR' => $status]);
+
+            if ($update) {
+                return $this->response->setJSON(['success' => true]);
+            }
+        }
+        return $this->response->setJSON(['success' => false], 400);
+    }
 }

@@ -7,18 +7,18 @@ use CodeIgniter\Model;
 class GunungModel extends Model
 {
     protected $table      = 'gunung';
-    // Sesuaikan dengan PK di screenshotmu (pakai huruf besar)
-    protected $primaryKey = 'ID_GUNUNG'; 
-    
-    // Tambahkan kolom lain yang ada di screenshot supaya bisa di-query/di-input nanti
+    protected $primaryKey = 'ID_GUNUNG';
     protected $allowedFields = [
-        'NAMA_GUNUNG', 
-        'GAMBAR', 
+        'NAMA_GUNUNG',
+        'GAMBAR',
         'GAMBAR_2',
-        'LOKASI', 
-        'KAPASITAS_MAX', 
-        'CUACA', 
-        'HARGA_TIKET', 
-        'KATEGORI'
+        'LOKASI',
+        'KAPASITAS_MAX',
+        'CUACA',
+        'HARGA_TIKET',
+        'KATEGORI',
+        'STATUS_JALUR',
+        'KUOTA_HARIAN',
+        'SISA_KUOTA'
     ];
 }
