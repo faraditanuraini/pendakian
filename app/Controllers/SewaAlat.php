@@ -3,17 +3,17 @@
 namespace App\Controllers;
 
 use App\Models\GunungModel;
-use App\Models\PeralatanModel;
+use App\Models\EquipmentsModel;
 
 class SewaAlat extends BaseController
 {
-    protected $gunungModel;
-    protected $peralatanModel;
+    protected $MountainsModel;
+    protected $EquipmentsModel;
 
     public function __construct()
     {
-        $this->gunungModel = new GunungModel();
-        $this->peralatanModel = new PeralatanModel();
+        $this->MountainsModel = new GunungModel();
+        $this->EquipmentsModel = new EquipmentsModel();
     }
 
     /**
@@ -21,7 +21,7 @@ class SewaAlat extends BaseController
      */
     public function index()
     {
-        $data['daftar_gunung'] = $this->gunungModel->findAll();
+        $data['daftar_gunung'] = $this->MountainsModel->findAll();
         return view('sewa_alat', $data);
     }
 
@@ -52,13 +52,13 @@ class SewaAlat extends BaseController
         session()->set('sewa_filter', $filterData);
 
         // Ambil detail gunung yang dipilih
-        $gunung = $this->gunungModel->find($idGunung);
+        $gunung = $this->MountainsModel->find($idGunung);
         if (!$gunung) {
             return redirect()->back()->withInput()->with('error', 'Data gunung yang Anda pilih tidak valid.');
         }
 
         // Ambil seluruh daftar alat camping riil dari database
-        $daftarAlat = $this->peralatanModel->findAll();
+        $daftarAlat = $this->EquipmentsModel->findAll();
 
         // Siapkan data untuk dikirim ke view
         $data = [
@@ -76,231 +76,157 @@ class SewaAlat extends BaseController
      */
     public function prosesBayar()
     {
-        // Proteksi API: Pastikan user sudah login
+        // 1. Proteksi API
         if (!session()->get('isLoggedIn')) {
-            return $this->response->setJSON([
-                'success' => false,
-                'message' => 'Silakan login terlebih dahulu untuk melakukan transaksi.'
-            ]);
+            return $this->response->setJSON(['success' => false, 'message' => 'Silakan login terlebih dahulu.']);
         }
 
-        // Tangkap data POST
-        $namaPenyewa   = $this->request->getPost('nama_penyewa');
+        $namaPenyewa = $this->request->getPost('nama_penyewa');
         $cartItemsJson = $this->request->getPost('cart_items');
 
         if (empty($namaPenyewa) || empty($cartItemsJson)) {
-            return $this->response->setJSON([
-                'success' => false,
-                'message' => 'Nama penyewa dan rincian belanja wajib diisi!'
-            ]);
+            return $this->response->setJSON(['success' => false, 'message' => 'Data tidak lengkap!']);
         }
 
         $cartItems = json_decode($cartItemsJson, true);
-        if (empty($cartItems)) {
-            return $this->response->setJSON([
-                'success' => false,
-                'message' => 'Keranjang belanja Anda masih kosong!'
-            ]);
-        }
-
-        // Ambil filter pencarian dari session
         $filter = session()->get('sewa_filter');
-        if (empty($filter)) {
-            return $this->response->setJSON([
-                'success' => false,
-                'message' => 'Sesi pencarian sewa telah kedaluwarsa. Silakan ulangi filter pencarian Anda.'
-            ]);
-        }
 
-        // Hitung total harga riil dari database (proteksi manipulasi harga di frontend)
+        // 2. Validasi Stok & Hitung Harga
         $totalHarga = 0;
         foreach ($cartItems as $item) {
-            $alat = $this->peralatanModel->find($item['id']);
-            if (!$alat) {
-                return $this->response->setJSON([
-                    'success' => false,
-                    'message' => 'Peralatan dengan ID ' . esc($item['id']) . ' tidak ditemukan.'
-                ]);
+            $alat = $this->EquipmentsModel->find($item['id']);
+            if (!$alat || $alat['stok_tersedia'] < $item['qty']) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Stok alat "' . ($alat['nama_alat'] ?? 'Unknown') . '" tidak mencukupi.']);
             }
-            // Proteksi stok
-            if ($alat['STOK'] < $item['qty']) {
-                return $this->response->setJSON([
-                    'success' => false,
-                    'message' => 'Stok peralatan "' . $alat['NAMA_ALAT'] . '" tidak mencukupi (Tersedia: ' . $alat['STOK'] . ' Pcs).'
-                ]);
-            }
-            $totalHarga += (int) $alat['HARGA_SEWA'] * (int) $item['qty'];
+            $totalHarga += (int) $alat['harga_sewa'] * (int) $item['qty'];
         }
 
-        // Generate ID_TRANSAKSI Unik numerik (CI4 PK kompatibel & Midtrans Snap kompatibel)
-        $idTransaksi = rand(100, 999) . substr(time(), -6);
+        // 3. Ambil ID_USER dari session fallback ke 1
+        $idUser = session()->get('id_user') ?? session()->get('ID_USER') ?? session()->get('id');
+        if (empty($idUser)) {
+            $idUser = 1;
+        }
 
-        // Memulai transaksi DB secara aman
+        // 4. Persiapan Database
         $db = \Config\Database::connect();
         $db->transBegin();
 
-        $builderTransaksi = $db->table('transaksi');
-        // SENSITIF DB: Kolom 'SESI' bertipe varchar(50) di database. Pastikan tidak melebihi 50 karakter agar query insert tidak ditolak!
-        $sesiText = 'Sewa - Masuk: ' . substr($filter['pos_masuk'], 0, 12) . ' Keluar: ' . substr($filter['pos_keluar'], 0, 12);
+        $idTransaksi = rand(100, 999) . substr(time(), -6);
+        $sesiText = 'Sewa - Masuk: ' . substr($filter['pos_masuk'] ?? '', 0, 12) . ' Keluar: ' . substr($filter['pos_keluar'] ?? '', 0, 12);
 
         $dataTransaksi = [
-            'ID_TRANSAKSI' => $idTransaksi,
-            'ID_USER'      => session()->get('id_user'),
-            'ID_GUNUNG'    => $filter['id_gunung'],
-            'TGL_BOOKING'  => date('Y-m-d H:i:s'),
-            'TGL_MENDAKI'  => $filter['tanggal_sewa'],
-            'SESI'         => $sesiText,
-            'TOT_BAYAR'    => (int) $totalHarga, // SENSITIF MIDTRANS: Pastikan integer murni
-            'STATUS_BAYAR' => 'Belum Bayar',
-            'BARCODE'      => 'SEWA-TEMP-' . time()
+            'ID_TRANSAKSI'     => $idTransaksi,
+            'ID_USER'          => $idUser,
+            'ID_GUNUNG'        => $filter['id_gunung'],
+            'TGL_BOOKING'      => date('Y-m-d'),
+            'TGL_MENDAKI'      => $filter['tanggal_sewa'],
+            'SESI'             => $sesiText,
+            'TOT_BAYAR'        => (int) $totalHarga,
+            'STATUS_BAYAR'     => 'Belum Bayar',
+            'BARCODE'          => 'SEWA-TEMP-' . time(),
+            'STATUS_KEHADIRAN' => 'Pending'
         ];
 
+        $builderTransaksi = $db->table('transaksi');
         $builderTransaksi->insert($dataTransaksi);
 
-        // Simpan detail belanja ke tabel 'detail_layanan'
-        $builderDetail = $db->table('detail_layanan');
-        $builderLayanan = $db->table('layanan');
-        $idx = 1;
+        $builderRentals = $db->table('rentals');
         foreach ($cartItems as $item) {
-            $alat = $this->peralatanModel->find($item['id']);
-            
-            // SENSITIF DB: Kolom 'ID_LAYANAN_' memiliki foreign key ke tabel 'layanan'.
-            // Lakukan self-healing insert untuk memastikan ID_LAYANAN_ sudah terdaftar di tabel layanan terlebih dahulu!
-            $layananExist = $builderLayanan->where('ID_LAYANAN_', $item['id'])->get()->getRowArray();
-            if (!$layananExist) {
-                $builderLayanan->insert([
-                    'ID_LAYANAN_'  => $item['id'],
-                    'NAMA_LAYANAN' => $alat['NAMA_ALAT'],
-                    'KATEGORI'     => 'Peralatan',
-                    'HARGA'        => (int) $alat['HARGA_SEWA'],
-                    'STOK'         => (int) $alat['STOK']
-                ]);
-            }
-
-            // SENSITIF DB: Kolom 'ID_DETAIL' bertipe varchar(255) PK di database dan TIDAK memiliki extra auto_increment!
-            // Kita wajib men-generate ID_DETAIL unik secara manual di setiap baris perulangan.
-            $idDetail = 'DTL-' . $idTransaksi . '-' . rand(100, 999) . $idx;
-
-            $dataDetail = [
-                'ID_DETAIL'      => $idDetail,
-                'ID_LAYANAN_'    => $item['id'],
-                'ID_TRANSAKSI'   => $idTransaksi,
-                'JUMLAH_ITEM'    => (int) $item['qty'],
-                'SUBTOTAL'       => (int) $alat['HARGA_SEWA'] * (int) $item['qty'],
-                'DURASI'         => 1, // default durasi
-                'STATUS_LAYANAN' => 'Sewa',
-                'HARGA_SATUAN'   => (int) $alat['HARGA_SEWA']
+            $dataRental = [
+                'transaction_id' => $idTransaksi,
+                'equipment_id'   => $item['id'],
+                'jumlah'         => (int) $item['qty'],
+                'tgl_pinjam'     => date('Y-m-d'),
+                'status'         => 'Dipinjam',
+                'created_at'     => date('Y-m-d H:i:s')
             ];
-            $builderDetail->insert($dataDetail);
-            $idx++;
+            $builderRentals->insert($dataRental);
+
+            $sisaStok = $this->EquipmentsModel->find($item['id'])['stok_tersedia'] - $item['qty'];
+            $this->EquipmentsModel->update($item['id'], ['stok_tersedia' => $sisaStok]);
         }
 
         if ($db->transStatus() === false) {
-            $error = $db->error();
+            $dbError = $db->error();
             $db->transRollback();
             return $this->response->setJSON([
                 'success' => false,
-                'message' => 'Gagal mendaftarkan transaksi sewa ke database. Detail Eror: ' . ($error['message'] ?? 'Unknown SQL Error') . ' (Code: ' . ($error['code'] ?? '0') . ')'
+                'message' => 'Gagal simpan ke database.',
+                'db_error' => $dbError
             ]);
         }
 
         $db->transCommit();
 
-        // Simpan nama penyewa ke session untuk ditampilkan di halaman sukses
-        session()->set('nama_penyewa_' . $idTransaksi, $namaPenyewa);
-
-        // Ambil email & data contact dari session untuk payload Midtrans
-        $customerEmail = session()->get('email') ?? 'email@example.com';
-        if (strpos($customerEmail, '@') === false) {
-            $customerEmail = $customerEmail . '@example.com';
+        // 6. Siapkan email customer valid untuk Midtrans
+        $customerEmail = session()->get('email');
+        if (empty($customerEmail) || !filter_var($customerEmail, FILTER_VALIDATE_EMAIL)) {
+            $user = $db->table('user')->where('ID_USER', $idUser)->get()->getRowArray();
+            $customerEmail = $user['EMAIL'] ?? $customerEmail;
+        }
+        if (empty($customerEmail) || !filter_var($customerEmail, FILTER_VALIDATE_EMAIL)) {
+            $customerEmail = 'user@pendakian.com';
         }
 
-        $customerDetails = [
+        $result = $this->getMidtransSnapToken($idTransaksi, $totalHarga, [
             'nama'  => $namaPenyewa,
             'email' => $customerEmail,
             'phone' => session()->get('no_wa') ?? '08123456789'
-        ];
+        ]);
 
-        // Tembak API Midtrans Sandbox
-        $result = $this->getMidtransSnapToken($idTransaksi, $totalHarga, $customerDetails);
-
-        if ($result['success']) {
-            return $this->response->setJSON([
-                'success'    => true,
-                'snap_token' => $result['token'],
-                'id_order'   => $idTransaksi
-            ]);
-        } else {
-            return $this->response->setJSON([
-                'success' => false,
-                'message' => 'Gagal terhubung ke gerbang pembayaran Midtrans. Detail: ' . $result['message']
-            ]);
-        }
+        return $this->response->setJSON($result);
     }
 
     /**
      * Merender halaman sukses transaksi sewa alat pendakian dengan QR code resmi.
      */
     public function sukses($idTransaksi)
-    {
-        if (!session()->get('isLoggedIn')) {
-            return redirect()->to(base_url('login'))->with('error', 'Silakan login terlebih dahulu.');
-        }
-
-        $db = \Config\Database::connect();
-        $builderTransaksi = $db->table('transaksi');
-
-        // 1. Ambil data transaksi
-        $transaksi = $builderTransaksi->where('ID_TRANSAKSI', $idTransaksi)->get()->getRowArray();
-        if (!$transaksi) {
-            return redirect()->to(base_url('sewa-alat'))->with('error', 'Transaksi sewa tidak ditemukan.');
-        }
-
-        // 2. Update status jadi Sudah Bayar & generate barcode resmi jika diperlukan
-        $officialBarcode = $transaksi['BARCODE'];
-        if (str_starts_with($officialBarcode, 'SEWA-TEMP-')) {
-            $officialBarcode = 'SEWA-' . date('Ymd') . '-' . rand(1000, 9999);
-            
-            $builderTransaksi->where('ID_TRANSAKSI', $idTransaksi)->update([
-                'STATUS_BAYAR' => 'Sudah Bayar',
-                'BARCODE'      => $officialBarcode
-            ]);
-        }
-
-        // 3. Ambil data gunung
-        $gunung = $this->gunungModel->find($transaksi['ID_GUNUNG']);
-
-        // 4. Ambil rincian detail barang sewa dari detail_layanan
-        $rentalItems = $db->table('detail_layanan')
-                          ->select('detail_layanan.*, peralatan.NAMA_ALAT')
-                          ->join('peralatan', 'peralatan.ID_PERALATAN = detail_layanan.ID_LAYANAN_')
-                          ->where('ID_TRANSAKSI', $idTransaksi)
-                          ->get()
-                          ->getResultArray();
-
-        $namaPenyewa = session()->get('nama_penyewa_' . $idTransaksi) ?? session()->get('username') ?? 'Penyewa';
-
-        // 5. Gabungkan rincian sewa menjadi teks terformat untuk Barcode menggunakan helper tersentralisasi
-        $trxData = [
-            'barcode'     => $officialBarcode,
-            'nm_lengkap'  => $namaPenyewa,
-            'nm_gunung'   => $gunung['NAMA_GUNUNG'] ?? 'Gunung',
-            'tgl_mendaki' => $transaksi['TGL_MENDAKI'],
-            'tot_bayar'   => $transaksi['TOT_BAYAR']
-        ];
-        $barcodeText = $this->susunTeksSewaQRCode($trxData, $rentalItems);
-
-        $data = [
-            'transaksi'    => $transaksi,
-            'gunung'       => $gunung,
-            'rental_items' => $rentalItems,
-            'nama_penyewa' => $namaPenyewa,
-            'ticket_code'  => $officialBarcode,
-            'barcode_data' => $barcodeText
-        ];
-
-        return view('sewa_sukses', $data);
+{
+    if (!session()->get('isLoggedIn')) {
+        return redirect()->to(base_url('login'))->with('error', 'Silakan login.');
     }
+
+    $db = \Config\Database::connect();
+    
+    // 1. Ambil data transaksi (Pastikan ID_TRANSAKSI sesuai case di DB)
+    $transaksi = $db->table('transaksi')->where('ID_TRANSAKSI', $idTransaksi)->get()->getRowArray();
+    if (!$transaksi) {
+        return redirect()->to(base_url('sewa-alat'))->with('error', 'Transaksi tidak ditemukan.');
+    }
+
+    // 2. Update status jika masih temp
+    if (str_starts_with($transaksi['BARCODE'] ?? '', 'SEWA-TEMP-')) {
+        $officialBarcode = 'SEWA-' . date('Ymd') . '-' . rand(1000, 9999);
+        $db->table('transaksi')->where('ID_TRANSAKSI', $idTransaksi)->update([
+            'STATUS_BAYAR' => 'Sudah Bayar',
+            'BARCODE'      => $officialBarcode
+        ]);
+        $transaksi['BARCODE'] = $officialBarcode; // Update data lokal
+    }
+
+    // 3. Ambil data gunung
+    $gunung = $this->MountainsModel->find($transaksi['ID_GUNUNG']);
+
+    // 4. Perbaikan Query: Mengambil data dari 'rentals' BUKAN 'detail_layanan'
+    // Sesuaikan join berdasarkan nama kolom yang benar di tabel rentals dan equipments
+    $rentalItems = $db->table('rentals')
+                      ->select('rentals.*, equipments.nama_alat') 
+                      ->join('equipments', 'equipments.id = rentals.equipment_id')
+                      ->where('rentals.transaction_id', $idTransaksi)
+                      ->get()
+                      ->getResultArray();
+
+    // 5. Data untuk View
+    $data = [
+        'transaksi'    => $transaksi,
+        'gunung'       => $gunung,
+        'rental_items' => $rental_items = $rentalItems, // Kirim ke view
+        'nama_penyewa' => session()->get('nama_penyewa_' . $idTransaksi) ?? 'Penyewa',
+        'ticket_code'  => $transaksi['BARCODE']
+    ];
+
+    return view('sewa_sukses', $data);
+}
 
     /**
      * Memanggil Midtrans Sandbox API
@@ -362,5 +288,13 @@ class SewaAlat extends BaseController
                 'message' => 'Exception cURL: ' . $e->getMessage()
             ];
         }
+    }
+
+    public function daftarAlat() 
+    {
+        // Karena di __construct sudah ada $this->EquipmentsModel, kita langsung pakai
+        $data['daftar_alat'] = $this->EquipmentsModel->findAll(); 
+        
+        return view('daftar_alat', $data);
     }
 }

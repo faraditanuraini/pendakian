@@ -174,15 +174,16 @@ class Tiket extends BaseController
         $sesiVal = 'Masuk: ' . substr($tahap1['pos_masuk'], 0, 40);
 
         $dataTransaksi = [
-            'ID_TRANSAKSI' => $idTransaksi,
-            'ID_USER'      => session()->get('id_user'),
-            'ID_GUNUNG'    => $tahap1['id_gunung'],
-            'TGL_BOOKING'  => date('Y-m-d H:i:s'),
-            'TGL_MENDAKI'  => $tahap1['tanggal_masuk'],
-            'SESI'         => $sesiVal,
-            'TOT_BAYAR'    => (int) $totalBayar, // SENSITIF MIDTRANS: Pastikan integer murni
-            'STATUS_BAYAR' => 'Belum Bayar',
-            'BARCODE'      => 'TRX-TEMP-' . time() // Temporary barcode
+            'ID_TRANSAKSI'     => $idTransaksi,
+            'ID_USER'          => session()->get('id_user') ?? session()->get('ID_USER'),
+            'ID_GUNUNG'        => $tahap1['id_gunung'],
+            'TGL_BOOKING'      => date('Y-m-d H:i:s'),
+            'TGL_MENDAKI'      => $tahap1['tanggal_masuk'],
+            'SESI'             => $sesiVal,
+            'TOT_BAYAR'        => (int) $totalBayar, // SENSITIF MIDTRANS: Pastikan integer murni
+            'STATUS_BAYAR'     => 'Belum Bayar',
+            'BARCODE'          => 'TRX-TEMP-' . time(), // Temporary barcode
+            'STATUS_KEHADIRAN' => 'Pending'
         ];
 
         if ($builder->insert($dataTransaksi)) {

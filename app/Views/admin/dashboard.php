@@ -1,14 +1,11 @@
 <?php
 // Pastikan Controller mengirimkan $total_gunung, $booking_hari_ini, $pendaki_aktif, $total_pendapatan, $daftar_gunung, dan $recent_transactions
-$total_gunung = $total_gunung ?? 14; 
-$booking_hari_ini = $booking_hari_ini ?? 48;
-$pendaki_aktif = $pendaki_aktif ?? 342; 
-$total_pendapatan = $total_pendapatan ?? 28500000;
-$daftar_gunung = $daftar_gunung ?? []; // Ini akan otomatis terisi penuh dari database Anda melalui Controller
-$recent_transactions = $recent_transactions ?? [
-    ['id' => 'TRX-001', 'user' => 'Faradita', 'gunung' => 'Gunung Welirang', 'layanan' => 'Tiket, Porter', 'total' => 1250000, 'status' => 'Lunas', 'tanggal' => '26 Mei 2026'],
-    ['id' => 'TRX-002', 'user' => 'Bima', 'gunung' => 'Gunung Penanggungan', 'layanan' => 'Tiket, Sewa Alat', 'total' => 450000, 'status' => 'Pending', 'tanggal' => '26 Mei 2026'],
-];
+$total_gunung = $total_gunung ?? 0; 
+$booking_hari_ini = $booking_hari_ini ?? 0;
+$pendaki_aktif = $pendaki_aktif ?? 0; 
+$total_pendapatan = $total_pendapatan ?? 0;
+$daftar_gunung = $daftar_gunung ?? []; 
+$recent_transactions = $recent_transactions ?? [];
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -27,30 +24,7 @@ $recent_transactions = $recent_transactions ?? [
 </head>
 <body class="bg-[#f4f7f6] flex min-h-screen font-sans text-slate-800">
 
-    <div class="w-64 bg-slate-900 text-white flex flex-col justify-between p-6 fixed h-full z-20">
-        <div class="space-y-6">
-            <div class="text-xl font-black uppercase tracking-wider border-b border-slate-700 pb-4 text-center text-emerald-400">
-                <i class="fa-solid fa-mountain-sun mr-2"></i> Pendaki.id
-            </div>
-            <nav class="space-y-2">
-                <a href="<?= base_url('admin/dashboard') ?>" class="block <?= (uri_string() == 'admin/dashboard' || uri_string() == '') ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-800 hover:text-white' ?> px-4 py-3 rounded-xl text-sm font-bold flex items-center gap-3 transition-all">
-                    <i class="fa-solid fa-chart-pie w-5"></i> Dashboard
-                </a>
-                <a href="<?= base_url('admin/gunung') ?>" class="block <?= (strpos(uri_string(), 'admin/gunung') !== false) ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-800 hover:text-white' ?> px-4 py-3 rounded-xl text-sm font-bold flex items-center gap-3 transition-all">
-                    <i class="fa-solid fa-mountain w-5"></i> Kelola Gunung
-                </a>
-                <a href="<?= base_url('admin/tiket') ?>" class="block text-slate-400 hover:bg-slate-800 hover:text-white px-4 py-3 rounded-xl text-sm font-bold flex items-center gap-3 transition-all">
-                    <i class="fa-solid fa-ticket w-5"></i> Kelola Transaksi
-                </a>
-            </nav>
-        </div>
-        
-        <div>
-            <a href="<?= base_url('logout') ?>" class="block w-full bg-red-500/10 border border-red-500/50 hover:bg-red-500 hover:text-white text-red-500 text-center py-3 rounded-xl text-sm font-bold transition-colors">
-                <i class="fa-solid fa-right-from-bracket mr-2"></i> Keluar
-            </a>
-        </div>
-    </div>
+    <?= $this->include('admin/sidebar') ?>
 
     <div class="flex-1 flex flex-col ml-64">
         <header class="bg-white/80 backdrop-blur-md sticky top-0 z-10 px-8 py-5 border-b border-gray-100 flex justify-between items-center">
@@ -133,18 +107,22 @@ $recent_transactions = $recent_transactions ?? [
                         <?php if (!empty($daftar_gunung)) : ?>
                             <?php foreach ($daftar_gunung as $g) : ?>
                                 <?php 
-                                    // Status dinamis membaca kolom baru database: STATUS_JALUR
-                                    $isOpen = (isset($g['STATUS_JALUR']) && $g['STATUS_JALUR'] === 'Buka') || (!isset($g['STATUS_JALUR']) && strpos(strtolower($g['CUACA']), 'hujan') === false);
+                                    $mountainName = $g['NAMA_GUNUNG'] ?? $g['nama'] ?? 'Tidak Diketahui';
+                                    $mountainStatus = strtolower($g['STATUS_JALUR'] ?? $g['status_jalur'] ?? '');
+                                    $kapasitasMax = (int) ($g['KAPASITAS_MAX'] ?? $g['kuota_harian'] ?? 0);
+                                    $sisaKuota = (int) ($g['SISA_KUOTA'] ?? $g['sisa_kuota'] ?? 0);
+                                    $isOpen = in_array($mountainStatus, ['open', 'buka', 'opened']);
                                     $textColor = $isOpen ? 'text-emerald-600' : 'text-red-500';
-                                    $statusText = $isOpen ? 'Jalur Dibuka' : 'Tutup (Kondisi Ekstrem)';
+                                    $statusText = $isOpen ? 'Jalur Dibuka' : 'Jalur Ditutup';
                                 ?>
                                 <div class="flex items-center justify-between p-3.5 rounded-2xl border border-slate-100 bg-slate-50 hover:border-slate-200 transition">
                                     <div class="max-w-[65%]">
-                                        <p class="font-black text-xs text-slate-800 uppercase tracking-tight truncate"><?= esc($g['NAMA_GUNUNG']) ?></p>
-                                        <p class="text-[11px] font-bold <?= $textColor ?> mt-0.5"><?= $statusText ?> | <span class="text-slate-400 font-medium"><?= esc($g['CUACA']) ?></span></p>
+                                        <p class="font-black text-xs text-slate-800 uppercase tracking-tight truncate"><?= esc($mountainName) ?></p>
+                                        <p class="status-text-label text-[11px] font-bold <?= $textColor ?> mt-0.5"><?= esc($statusText) ?> | <span class="text-slate-400 font-medium"><?= esc($g['CUACA'] ?? 'Cerah') ?></span></p>
+                                        <p class="text-[10px] text-slate-500 mt-1">Kuota: <?= number_format($kapasitasMax, 0, ',', '.') ?> | Sisa: <?= number_format($sisaKuota, 0, ',', '.') ?></p>
                                     </div>
                                     <label class="relative inline-flex items-center cursor-pointer">
-                                        <input type="checkbox" value="<?= $g['ID_GUNUNG'] ?>" class="sr-only peer status-toggle" <?= $isOpen ? 'checked' : '' ?>>
+                                        <input type="checkbox" value="<?= esc($g['ID_GUNUNG'] ?? $g['id'] ?? '') ?>" class="sr-only peer status-toggle" <?= $isOpen ? 'checked' : '' ?>>
                                         <div class="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
                                     </label>
                                 </div>
@@ -166,7 +144,7 @@ $recent_transactions = $recent_transactions ?? [
                         <h3 class="text-lg font-black text-slate-800">Rekapitulasi Transaksi Terpadu</h3>
                         <p class="text-xs font-semibold text-slate-500 mt-1">Data digenerate menggunakan teknik spesifik basis data (JOIN Multi-table & ORDER BY Descending)</p>
                     </div>
-                    <button class="bg-slate-800 hover:bg-slate-900 text-white px-5 py-2.5 rounded-full text-xs font-bold transition">Lihat Laporan Lengkap</button>
+                    <a href="<?= base_url('admin/transaksi') ?>" class="bg-slate-800 hover:bg-slate-900 text-white px-5 py-2.5 rounded-full text-xs font-bold transition inline-flex items-center">Lihat Laporan Lengkap</a>
                 </div>
                 
                 <div class="overflow-x-auto">
@@ -182,27 +160,33 @@ $recent_transactions = $recent_transactions ?? [
                             </tr>
                         </thead>
                         <tbody class="text-sm font-medium text-slate-700 divide-y divide-slate-50">
-                            <?php foreach ($recent_transactions as $trx) : ?>
-                            <tr class="hover:bg-slate-50/80 transition-colors">
-                                <td class="p-5 font-bold text-slate-800"><?= $trx['id'] ?></td>
-                                <td class="p-5">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex justify-center items-center font-bold text-xs">
-                                            <?= substr($trx['user'], 0, 1) ?>
+                            <?php if(!empty($recent_transactions)): ?>
+                                <?php foreach ($recent_transactions as $trx) : ?>
+                                <tr class="hover:bg-slate-50/80 transition-colors">
+                                    <td class="p-5 font-bold text-slate-800"><?= $trx['id'] ?></td>
+                                    <td class="p-5">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex justify-center items-center font-bold text-xs">
+                                                <?= substr($trx['user'], 0, 1) ?>
+                                            </div>
+                                            <?= $trx['user'] ?>
                                         </div>
-                                        <?= $trx['user'] ?>
-                                    </div>
-                                </td>
-                                <td class="p-5 font-bold uppercase text-xs tracking-wide"><?= $trx['gunung'] ?></td>
-                                <td class="p-5 text-slate-500 text-xs"><?= $trx['layanan'] ?></td>
-                                <td class="p-5 font-black text-emerald-600">Rp <?= number_format($trx['total'], 0, ',', '.') ?></td>
-                                <td class="p-5">
-                                    <span class="<?= $trx['status'] == 'Lunas' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700' ?> px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wide">
-                                        <?= $trx['status'] ?>
-                                    </span>
-                                </td>
-                            </tr>
-                            <?php endforeach; ?>
+                                    </td>
+                                    <td class="p-5 font-bold uppercase text-xs tracking-wide"><?= $trx['gunung'] ?></td>
+                                    <td class="p-5 text-slate-500 text-xs"><?= $trx['layanan'] ?></td>
+                                    <td class="p-5 font-black text-emerald-600">Rp <?= number_format($trx['total'], 0, ',', '.') ?></td>
+                                    <td class="p-5">
+                                        <span class="<?= in_array($trx['status'], ['Lunas', 'Sudah Bayar']) ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700' ?> px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wide">
+                                            <?= $trx['status'] ?>
+                                        </span>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <tr>
+                                    <td colspan="6" class="p-5 text-center text-slate-400 text-xs">Belum ada transaksi terbaru.</td>
+                                </tr>
+                            <?php endif; ?>
                         </tbody>
                     </table>
                 </div>
@@ -212,28 +196,26 @@ $recent_transactions = $recent_transactions ?? [
     </div>
 
     <script>
+        // 1. KODE GRAFIK / CHART SINKRON DATABASE
         const ctx = document.getElementById('kuotaChart').getContext('2d');
-        
-        // LOOPING DATA NAMA-NAMA GUNUNG LANGSUNG DARI DATABASE PHP ARRAY
         const labelsGunung = [
             <?php foreach ($daftar_gunung as $g): ?>
-                '<?= esc(str_replace(['Gunung ', 'Bukit ', 'Puthuk '], '', $g['NAMA_GUNUNG'])) ?>',
+                '<?= esc(str_replace(['Gunung ', 'Bukit ', 'Puthuk '], '', $g['NAMA_GUNUNG'] ?? $g['nama'] ?? '')) ?>',
             <?php endforeach; ?>
         ];
 
-        // LOOPING DATA NILAI KAPASITAS MAKSIMAL MASING-MASING GUNUNG
         const dataKapasitas = [
             <?php foreach ($daftar_gunung as $g): ?>
-                <?= (int)($g['KAPASITAS_MAX'] ?? 0) ?>,
+                <?= (int) ($g['KAPASITAS_MAX'] ?? $g['kuota_harian'] ?? 0) ?>,
             <?php endforeach; ?>
         ];
 
-        // LOGIKA PENENTUAN WARNA DI GRAFIK SECARA DINAMIS
         const backgroundColors = [
             <?php foreach ($daftar_gunung as $g): ?>
                 <?php 
-                    $isOpen = (isset($g['STATUS_JALUR']) && $g['STATUS_JALUR'] === 'Buka') || (!isset($g['STATUS_JALUR']) && strpos(strtolower($g['CUACA']), 'hujan') === false);
-                    echo $isOpen ? "'rgba(16, 185, 129, 0.85)'," : "'rgba(239, 68, 68, 0.85)',"; 
+                    $mountainStatus = strtolower($g['STATUS_JALUR'] ?? $g['status_jalur'] ?? '');
+                    $isOpen = in_array($mountainStatus, ['open', 'buka', 'opened']);
+                    echo $isOpen ? "'rgba(16, 185, 129, 0.85)'," : "'rgba(239, 68, 68, 0.85)',";
                 ?>
             <?php endforeach; ?>
         ];
@@ -283,58 +265,44 @@ $recent_transactions = $recent_transactions ?? [
             }
         });
 
-        // ==========================================
-        // FITUR PENDUKUNG: DETEKSI EVENT KLIK ON/OFF
-        // ==========================================
+        // 2. KODE AJAX TOGGLE SAKELAR JALUR AKTIF REALTIME
         document.querySelectorAll('.status-toggle').forEach(toggle => {
             toggle.addEventListener('change', function() {
                 const idGunung = this.value;
                 const statusBaru = this.checked ? 'Buka' : 'Tutup';
-                
-                console.log(`Mengubah ID Gunung ${idGunung} menjadi status: ${statusBaru}`);
-                
-                document.querySelectorAll('.status-toggle').forEach(toggle => {
-    toggle.addEventListener('change', function() {
-        const idGunung = this.value;
-        const statusBaru = this.checked ? 'Buka' : 'Tutup';
-        
-        // Mengirim data secara background ke Controller Admin
-        fetch('<?= base_url('admin/gunung/updateStatus') ?>', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            body: JSON.stringify({
-                id: idGunung,
-                status: statusBaru
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Opsional: Berikan notifikasi kecil (toast) jika berhasil
-                console.log('Status database berhasil diperbarui!');
-                // Mengubah warna teks status secara real-time tanpa reload
-                const textStatus = this.closest('.flex').querySelector('.text-\\[11px\\]');
-                if (statusBaru === 'Buka') {
-                    textStatus.innerHTML = `Jalur Dibuka | <span class="text-slate-400 font-medium">Diperbarui Admin</span>`;
-                    textStatus.className = "text-[11px] font-bold text-emerald-600 mt-0.5";
-                } else {
-                    textStatus.innerHTML = `Tutup (Kondisi Ekstrem) | <span class="text-slate-400 font-medium">Diperbarui Admin</span>`;
-                    textStatus.className = "text-[11px] font-bold text-red-500 mt-0.5";
-                }
-            } else {
-                alert('Gagal memperbarui status di database.');
-                this.checked = !this.checked; // Kembalikan posisi tombol jika gagal
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            this.checked = !this.checked;
-        });
-    });
-});
+                const textStatus = this.closest('.flex')?.querySelector('.status-text-label');
+
+                // Endpoint disesuaikan dengan fungsi toggleStatus di MountainController kamu
+                fetch('<?= base_url('admin/gunung/toggle-status') ?>', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({
+                        id: idGunung,
+                        status: this.checked ? 'open' : 'closed'
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && textStatus) {
+                        if (statusBaru === 'Buka') {
+                            textStatus.innerHTML = `Jalur Dibuka | <span class="text-slate-400 font-medium">Diperbarui Admin</span>`;
+                            textStatus.className = 'status-text-label text-[11px] font-bold text-emerald-600 mt-0.5';
+                        } else {
+                            textStatus.innerHTML = `Jalur Ditutup | <span class="text-slate-400 font-medium">Diperbarui Admin</span>`;
+                            textStatus.className = 'status-text-label text-[11px] font-bold text-red-500 mt-0.5';
+                        }
+                    } else {
+                        this.checked = !this.checked;
+                        alert('Gagal memperbarui status di database.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    this.checked = !this.checked;
+                });
             });
         });
     </script>

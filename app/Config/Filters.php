@@ -37,6 +37,7 @@ class Filters extends BaseFilters
         
         // Tambahkan alias filter admin kamu di sini
         'adminFilter'   => \App\Filters\AdminFilter::class,
+        'financeFilter' => \App\Filters\FinanceFilter::class,
     ];
 
     /**
